@@ -40,13 +40,24 @@ pub fn install() -> Result<(), String> {
     let binary = blameprompt_binary_path();
     let command = format!("{} checkpoint claude --hook-input stdin", binary);
 
-    let hook_entry = json!({
-        "matcher": "Write|Edit|MultiEdit",
-        "hooks": [{
-            "type": "command",
-            "command": command
-        }]
-    });
+    let hook_cmd = json!([{
+        "type": "command",
+        "command": command
+    }]);
+
+    // All hook events and their matchers for comprehensive auditing
+    let hook_configs: Vec<(&str, Option<&str>)> = vec![
+        ("PreToolUse",        Some("Write|Edit|MultiEdit|Bash")),
+        ("PostToolUse",       Some("Write|Edit|MultiEdit|Bash|Read|Glob|Grep|WebFetch|WebSearch|Task")),
+        ("PostToolUseFailure", Some("Write|Edit|MultiEdit|Bash")),
+        ("UserPromptSubmit",  None),
+        ("SessionStart",      None),
+        ("SessionEnd",        None),
+        ("Stop",              None),
+        ("SubagentStart",     None),
+        ("SubagentStop",      None),
+        ("Notification",      None),
+    ];
 
     // Ensure hooks object exists
     if settings.get("hooks").is_none() {
@@ -55,20 +66,24 @@ pub fn install() -> Result<(), String> {
 
     let hooks = settings.get_mut("hooks").unwrap();
 
-    // Add PreToolUse
-    if hooks.get("PreToolUse").is_none() {
-        hooks["PreToolUse"] = json!([]);
-    }
-    if let Some(arr) = hooks.get_mut("PreToolUse").and_then(|v| v.as_array_mut()) {
-        arr.push(hook_entry.clone());
-    }
+    for (event, matcher) in &hook_configs {
+        let entry = if let Some(m) = matcher {
+            json!({
+                "matcher": m,
+                "hooks": hook_cmd
+            })
+        } else {
+            json!({
+                "hooks": hook_cmd
+            })
+        };
 
-    // Add PostToolUse
-    if hooks.get("PostToolUse").is_none() {
-        hooks["PostToolUse"] = json!([]);
-    }
-    if let Some(arr) = hooks.get_mut("PostToolUse").and_then(|v| v.as_array_mut()) {
-        arr.push(hook_entry);
+        if hooks.get(*event).is_none() {
+            hooks[*event] = json!([]);
+        }
+        if let Some(arr) = hooks.get_mut(*event).and_then(|v| v.as_array_mut()) {
+            arr.push(entry);
+        }
     }
 
     // Write back
@@ -95,7 +110,12 @@ pub fn uninstall() -> Result<(), String> {
         .map_err(|e| format!("Invalid JSON: {}", e))?;
 
     if let Some(hooks) = settings.get_mut("hooks") {
-        for event in &["PreToolUse", "PostToolUse"] {
+        let all_events = [
+            "PreToolUse", "PostToolUse", "PostToolUseFailure",
+            "UserPromptSubmit", "SessionStart", "SessionEnd",
+            "Stop", "SubagentStart", "SubagentStop", "Notification",
+        ];
+        for event in &all_events {
             if let Some(arr) = hooks.get_mut(*event).and_then(|v| v.as_array_mut()) {
                 arr.retain(|entry| {
                     let json_str = serde_json::to_string(entry).unwrap_or_default();
