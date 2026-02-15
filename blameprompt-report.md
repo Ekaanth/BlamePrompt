@@ -1,29 +1,28 @@
 # BlamePrompt Report: blameprompt
-> Generated: 2026-02-15 | Period: entire history | Commits: 0
+> Generated: 2026-02-15 | Period: entire history | Commits: 1
 
 ## Executive Summary
 
 | Metric | Value |
 |--------|-------|
-| Total commits analyzed | 0 |
-| Commits with AI-generated code | 1 (0.0%) |
+| Total commits analyzed | 1 |
+| Commits with AI-generated code | 1 (100.0%) |
 | Total AI-assisted sessions | 4 |
 | Total files modified by AI | 27 |
-| Total AI-generated lines | 65 |
-| Estimated total AI cost | $3.70 |
+| Total AI-generated lines | 66 |
+| Estimated total AI cost | $3.84 |
 | Unique contributors | 1 |
 | AI tools used | claude |
-| Uncommitted AI receipts | 65 |
 
 ## AI vs Human Code Attribution
 
 ### Overall
-- **AI-generated**: 65 lines
+- **AI-generated**: 66 lines
 
 ### By Directory
 | Directory | AI Lines |
 |-----------|----------|
-| src/commands | 44 |
+| src/commands | 45 |
 |  | 7 |
 | src/core | 7 |
 | src | 6 |
@@ -32,56 +31,58 @@
 ### Top AI-Heavy Files
 | File | AI Lines | Model Used |
 |------|----------|------------|
-| src/commands/report.rs | 7 | Claude Opus 4.6 |
+| src/commands/report.rs | 8 | Claude Opus 4.6 |
 | src/commands/audit.rs | 7 | Claude Opus 4.6 |
 | src/commands/prompt_injection.rs | 6 | Claude Opus 4.6 |
 | src/main.rs | 6 | Claude Opus 4.6 |
 | src/commands/budget.rs | 4 | Claude Opus 4.6 |
 | README.md | 4 | Claude Opus 4.6 |
-| src/core/config.rs | 3 | Claude Opus 4.6 |
 | src/commands/mod.rs | 3 | Claude Opus 4.6 |
+| src/core/config.rs | 3 | Claude Opus 4.6 |
 | src/commands/checkpoint.rs | 2 | Claude Opus 4.6 |
-| src/commands/secret_rotation.rs | 2 | Claude Opus 4.6 |
+| src/commands/vuln_scan.rs | 2 | Claude Opus 4.6 |
 
 ## Token & Cost Analysis
 
 ### Cost Summary
 | Metric | Value |
 |--------|-------|
-| Total estimated cost | $3.70 |
-| Avg cost per session | $0.925 |
-| Avg cost per AI commit | $3.701 |
+| Total estimated cost | $3.84 |
+| Avg cost per session | $0.959 |
+| Avg cost per AI commit | $3.837 |
 
 ### Cost by Model
 | Model | Receipts | Est. Cost | % of Total |
 |-------|----------|-----------|------------|
-| Claude Opus 4.6 | 65 | $3.70 | 100.0% |
+| Claude Opus 4.6 | 66 | $3.84 | 100.0% |
 
 ## User Contributions
 
 | User | AI Sessions | AI Lines | Est. Cost |
 |------|-------------|----------|-----------|
-| Ekaanth <akanth1994@gmail.com> | 65 | 65 | $3.70 |
+| Ekaanth <akanth1994@gmail.com> | 66 | 66 | $3.84 |
 
 ## Time & AI Generation Analysis
 
 ### Total Time Invested in AI
 | Metric | Value |
 |--------|-------|
-| Total AI session time | 23h 29m |
-| Avg session duration | 21m 41s |
-| Estimated dev-hours saved | ~1h (65 AI lines x 72s avg/line) |
-| Time ROI | 0.1x |
+| Total AI session time | 1h 37m |
+| Unique sessions | 4 |
+| Avg session duration | 24m 24s |
+| Total AI-generated lines | 66 |
+| Estimated dev-hours saved | ~0.6h (66 AI lines x 30s/line) |
+| Time ROI | 0.3x |
 
 ### AI Model Response Speed
 | Model | Avg Response | Sessions |
 |-------|-------------|----------|
-| Claude Opus 4.6 | 4.6s | 65 |
+| Claude Opus 4.6 | 4.6s | 66 |
 
 ## Security Audit
 
 ### Redaction Summary
-- **Total prompts scanned**: 65
+- **Total prompts scanned**: 66
 - **Prompts with secrets detected**: 0 (0.0%)
 - **All secrets were auto-redacted**: Yes
 
@@ -90,44 +91,44 @@
 ### License Breakdown
 | License | Sessions | Est. Cost |
 |---------|----------|-----------|
-| Closed-source | 65 | $3.70 |
+| Closed-source | 66 | $3.84 |
 | Open-source | 0 | $0.00 |
 
 ### Deployment Breakdown
 | Deployment | Sessions |
 |-----------|----------|
-| Cloud | 65 |
+| Cloud | 66 |
 | Local | 0 |
 
 ### Vendor Comparison
 | Vendor | License | Sessions | Est. Cost |
 |--------|---------|----------|-----------|
-| anthropic | Closed | 65 | $3.70 |
+| anthropic | Closed | 66 | $3.84 |
 
 ## File-Level AI Heatmap
 
 ### Most AI-Modified Files
 | Rank | File | AI Edits | AI Lines | Last AI Edit | Primary Model |
 |------|------|----------|----------|-------------|---------------|
-| 1 | src/commands/report.rs | 7 | 7 | 2026-02-15 | Claude Opus 4.6 |
+| 1 | src/commands/report.rs | 8 | 8 | 2026-02-15 | Claude Opus 4.6 |
 | 2 | src/commands/audit.rs | 7 | 7 | 2026-02-15 | Claude Opus 4.6 |
-| 3 | src/main.rs | 6 | 6 | 2026-02-15 | Claude Opus 4.6 |
-| 4 | src/commands/prompt_injection.rs | 6 | 6 | 2026-02-15 | Claude Opus 4.6 |
+| 3 | src/commands/prompt_injection.rs | 6 | 6 | 2026-02-15 | Claude Opus 4.6 |
+| 4 | src/main.rs | 6 | 6 | 2026-02-15 | Claude Opus 4.6 |
 | 5 | src/commands/budget.rs | 4 | 4 | 2026-02-15 | Claude Opus 4.6 |
 | 6 | README.md | 4 | 4 | 2026-02-15 | Claude Opus 4.6 |
-| 7 | src/commands/mod.rs | 3 | 3 | 2026-02-15 | Claude Opus 4.6 |
-| 8 | src/core/config.rs | 3 | 3 | 2026-02-15 | Claude Opus 4.6 |
-| 9 | src/commands/compliance.rs | 2 | 2 | 2026-02-15 | Claude Opus 4.6 |
-| 10 | src/commands/secret_rotation.rs | 2 | 2 | 2026-02-15 | Claude Opus 4.6 |
-| 11 | src/commands/vuln_scan.rs | 2 | 2 | 2026-02-15 | Claude Opus 4.6 |
-| 12 | src/core/receipt.rs | 2 | 2 | 2026-02-15 | Claude Opus 4.6 |
+| 7 | src/core/config.rs | 3 | 3 | 2026-02-15 | Claude Opus 4.6 |
+| 8 | src/commands/mod.rs | 3 | 3 | 2026-02-15 | Claude Opus 4.6 |
+| 9 | src/core/receipt.rs | 2 | 2 | 2026-02-15 | Claude Opus 4.6 |
+| 10 | src/commands/compliance.rs | 2 | 2 | 2026-02-15 | Claude Opus 4.6 |
+| 11 | src/commands/secret_rotation.rs | 2 | 2 | 2026-02-15 | Claude Opus 4.6 |
+| 12 | src/commands/checkpoint.rs | 2 | 2 | 2026-02-15 | Claude Opus 4.6 |
 | 13 | src/commands/record.rs | 2 | 2 | 2026-02-15 | Claude Opus 4.6 |
-| 14 | src/commands/checkpoint.rs | 2 | 2 | 2026-02-15 | Claude Opus 4.6 |
-| 15 | src/commands/supply_chain.rs | 1 | 1 | 2026-02-15 | Claude Opus 4.6 |
-| 16 | src/commands/show.rs | 1 | 1 | 2026-02-15 | Claude Opus 4.6 |
-| 17 | test_e2e.sh | 1 | 1 | 2026-02-15 | Claude Opus 4.6 |
-| 18 | src/commands/model_recommend.rs | 1 | 1 | 2026-02-15 | Claude Opus 4.6 |
-| 19 | /Users/metaquity/.claude/settings.json | 1 | 1 | 2026-02-15 | Claude Opus 4.6 |
+| 14 | src/commands/vuln_scan.rs | 2 | 2 | 2026-02-15 | Claude Opus 4.6 |
+| 15 | src/commands/show.rs | 1 | 1 | 2026-02-15 | Claude Opus 4.6 |
+| 16 | src/commands/supply_chain.rs | 1 | 1 | 2026-02-15 | Claude Opus 4.6 |
+| 17 | src/core/db.rs | 1 | 1 | 2026-02-15 | Claude Opus 4.6 |
+| 18 | ENTERPRISE_PLAN.md | 1 | 1 | 2026-02-15 | Claude Opus 4.6 |
+| 19 | test_e2e.sh | 1 | 1 | 2026-02-15 | Claude Opus 4.6 |
 | 20 | Cargo.toml | 1 | 1 | 2026-02-15 | Claude Opus 4.6 |
 
 ## Session Analysis
@@ -142,7 +143,7 @@
 ### Top Sessions by Message Count
 | Session ID | Messages | Files | Est. Cost | Prompt Summary |
 |-----------|----------|-------|-----------|---------------|
-| 7f2e447b | 515 | 22 | $3.53 | "use @CHAIN_OF_THOUGHT.md and iplementt that into t" |
+| 7f2e447b | 544 | 22 | $3.66 | "use @CHAIN_OF_THOUGHT.md and iplementt that into t" |
 | 61605b06 | 86 | 7 | $0.08 | "I want to add enterprise side to help enterprise m" |
 | 1f66264c | 62 | 1 | $0.03 | "(base) metaquity@Abhisheks-MacBook-Pro-2 blameprom" |
 | b400e0d0 | 42 | 2 | $0.07 | " 12. Budget Controls — Set monthly/quarterly budge" |
@@ -151,10 +152,11 @@
 
 Full prompt context for each AI-assisted change.
 
-### Uncommitted (Staging)
+### Commit `80a32d48`
 
-- **Date**: 2026-02-15T10:26:42+0000
-- **Author**: staging
+- **Date**: 2026-02-15T15:59:57+05:30
+- **Author**: Ekaanth <akanth1994@gmail.com>
+- **Message**: initial commit
 
 #### src/commands/analytics.rs | `claude-opus-4-6` via claude
 
@@ -185,7 +187,6 @@ Full prompt context for each AI-assisted change.
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 12m 31s
 - Avg AI response: 3.0s
 
 #### /Users/metaquity/.claude/settings.json | `claude-opus-4-6` via claude
@@ -218,7 +219,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 16m 40s
 - Avg AI response: 3.6s
 
 #### src/commands/report.rs | `claude-opus-4-6` via claude
@@ -234,7 +234,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 16m 52s
 - Avg AI response: 3.5s
 
 #### src/main.rs | `claude-opus-4-6` via claude
@@ -250,7 +249,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 19m 23s
 - Avg AI response: 3.6s
 
 #### src/core/receipt.rs | `claude-opus-4-6` via claude
@@ -266,7 +264,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 20m 42s
 - Avg AI response: 3.6s
 
 #### src/core/transcript.rs | `claude-opus-4-6` via claude
@@ -282,7 +279,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 20m 54s
 - Avg AI response: 3.6s
 
 #### src/commands/checkpoint.rs | `claude-opus-4-6` via claude
@@ -298,7 +294,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 21m 7s
 - Avg AI response: 3.7s
 
 #### src/commands/checkpoint.rs | `claude-opus-4-6` via claude
@@ -314,7 +309,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 21m 12s
 - Avg AI response: 3.7s
 
 #### src/commands/staging.rs | `claude-opus-4-6` via claude
@@ -330,7 +324,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 21m 20s
 - Avg AI response: 3.7s
 
 #### src/commands/record.rs | `claude-opus-4-6` via claude
@@ -346,7 +339,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 21m 22s
 - Avg AI response: 3.7s
 
 #### src/commands/record.rs | `claude-opus-4-6` via claude
@@ -362,7 +354,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 21m 30s
 - Avg AI response: 3.7s
 
 #### src/core/receipt.rs | `claude-opus-4-6` via claude
@@ -378,7 +369,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 21m 36s
 - Avg AI response: 3.7s
 
 #### src/commands/show.rs | `claude-opus-4-6` via claude
@@ -394,7 +384,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 21m 50s
 - Avg AI response: 3.7s
 
 #### src/commands/audit.rs | `claude-opus-4-6` via claude
@@ -410,7 +399,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 22m 4s
 - Avg AI response: 3.8s
 
 #### src/commands/audit.rs | `claude-opus-4-6` via claude
@@ -426,7 +414,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 22m 21s
 - Avg AI response: 3.8s
 
 #### src/commands/audit.rs | `claude-opus-4-6` via claude
@@ -442,7 +429,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 22m 31s
 - Avg AI response: 3.8s
 
 #### src/commands/audit.rs | `claude-opus-4-6` via claude
@@ -458,7 +444,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 22m 44s
 - Avg AI response: 3.8s
 
 #### src/commands/audit.rs | `claude-opus-4-6` via claude
@@ -474,7 +459,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 22m 54s
 - Avg AI response: 3.8s
 
 #### src/core/db.rs | `claude-opus-4-6` via claude
@@ -490,7 +474,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 23m 15s
 - Avg AI response: 3.8s
 
 #### src/commands/license_scan.rs | `claude-opus-4-6` via claude
@@ -506,7 +489,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 26m 16s
 - Avg AI response: 3.8s
 
 #### src/commands/compliance.rs | `claude-opus-4-6` via claude
@@ -522,7 +504,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 26m 49s
 - Avg AI response: 3.8s
 
 #### src/commands/mod.rs | `claude-opus-4-6` via claude
@@ -538,7 +519,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 29m 32s
 - Avg AI response: 4.0s
 
 #### src/commands/supply_chain.rs | `claude-opus-4-6` via claude
@@ -554,7 +534,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 30m 14s
 - Avg AI response: 4.0s
 
 #### src/commands/vuln_scan.rs | `claude-opus-4-6` via claude
@@ -570,7 +549,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 30m 18s
 - Avg AI response: 4.2s
 
 #### src/commands/prompt_injection.rs | `claude-opus-4-6` via claude
@@ -586,7 +564,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 31m 3s
 - Avg AI response: 4.5s
 
 #### src/commands/secret_rotation.rs | `claude-opus-4-6` via claude
@@ -602,7 +579,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 31m 41s
 - Avg AI response: 4.7s
 
 #### src/main.rs | `claude-opus-4-6` via claude
@@ -618,7 +594,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 32m 19s
 - Avg AI response: 4.9s
 
 #### src/main.rs | `claude-opus-4-6` via claude
@@ -634,7 +609,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 32m 34s
 - Avg AI response: 4.9s
 
 #### src/commands/mod.rs | `claude-opus-4-6` via claude
@@ -650,7 +624,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 32m 41s
 - Avg AI response: 4.9s
 
 #### src/commands/budget.rs | `claude-opus-4-6` via claude
@@ -666,7 +639,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 32m 43s
 - Avg AI response: 4.9s
 
 #### src/commands/model_recommend.rs | `claude-opus-4-6` via claude
@@ -682,7 +654,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 33m 17s
 - Avg AI response: 5.1s
 
 #### src/commands/compliance.rs | `claude-opus-4-6` via claude
@@ -698,7 +669,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 34m 20s
 - Avg AI response: 5.1s
 
 #### src/commands/vuln_scan.rs | `claude-opus-4-6` via claude
@@ -714,7 +684,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 34m 33s
 - Avg AI response: 5.1s
 
 #### src/commands/prompt_injection.rs | `claude-opus-4-6` via claude
@@ -730,7 +699,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 34m 50s
 - Avg AI response: 5.1s
 
 #### src/commands/prompt_injection.rs | `claude-opus-4-6` via claude
@@ -746,7 +714,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 35m 0s
 - Avg AI response: 5.1s
 
 #### src/commands/prompt_injection.rs | `claude-opus-4-6` via claude
@@ -762,7 +729,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 35m 2s
 - Avg AI response: 5.1s
 
 #### src/commands/prompt_injection.rs | `claude-opus-4-6` via claude
@@ -778,7 +744,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 35m 21s
 - Avg AI response: 5.0s
 
 #### src/commands/budget.rs | `claude-opus-4-6` via claude
@@ -794,7 +759,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 35m 47s
 - Avg AI response: 5.0s
 
 #### src/commands/budget.rs | `claude-opus-4-6` via claude
@@ -810,7 +774,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 35m 50s
 - Avg AI response: 5.0s
 
 #### src/commands/budget.rs | `claude-opus-4-6` via claude
@@ -826,7 +789,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 35m 51s
 - Avg AI response: 5.0s
 
 #### src/commands/prompt_injection.rs | `claude-opus-4-6` via claude
@@ -842,7 +804,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 35m 53s
 - Avg AI response: 5.0s
 
 #### src/commands/secret_rotation.rs | `claude-opus-4-6` via claude
@@ -858,7 +819,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 35m 54s
 - Avg AI response: 5.0s
 
 #### README.md | `claude-opus-4-6` via claude
@@ -874,7 +834,6 @@ zsh: command not found: blameprompt
 **Prompt:**
 > use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
 
-- Session duration: 37m 23s
 - Avg AI response: 4.9s
 
 #### src/commands/audit.rs | `claude-opus-4-6` via claude
@@ -910,7 +869,6 @@ zsh: command not found: blameprompt
   thresholds. Hard cap option (block AI usage after budget exceeded).
     15. Model Recommendati
 
-- Session duration: 16m 55s
 - Avg AI response: 4.6s
 
 #### src/commands/report.rs | `claude-opus-4-6` via claude
@@ -928,7 +886,6 @@ zsh: command not found: blameprompt
   thresholds. Hard cap option (block AI usage after budget exceeded).
     15. Model Recommendati
 
-- Session duration: 17m 0s
 - Avg AI response: 4.5s
 
 #### src/commands/report.rs | `claude-opus-4-6` via claude
@@ -946,7 +903,6 @@ zsh: command not found: blameprompt
   thresholds. Hard cap option (block AI usage after budget exceeded).
     15. Model Recommendati
 
-- Session duration: 17m 3s
 - Avg AI response: 4.5s
 
 #### src/commands/report.rs | `claude-opus-4-6` via claude
@@ -964,7 +920,6 @@ zsh: command not found: blameprompt
   thresholds. Hard cap option (block AI usage after budget exceeded).
     15. Model Recommendati
 
-- Session duration: 17m 9s
 - Avg AI response: 4.6s
 
 #### src/commands/report.rs | `claude-opus-4-6` via claude
@@ -982,7 +937,6 @@ zsh: command not found: blameprompt
   thresholds. Hard cap option (block AI usage after budget exceeded).
     15. Model Recommendati
 
-- Session duration: 17m 14s
 - Avg AI response: 4.7s
 
 #### src/commands/report.rs | `claude-opus-4-6` via claude
@@ -1000,7 +954,6 @@ zsh: command not found: blameprompt
   thresholds. Hard cap option (block AI usage after budget exceeded).
     15. Model Recommendati
 
-- Session duration: 17m 19s
 - Avg AI response: 4.7s
 
 #### ENTERPRISE_PLAN.md | `claude-opus-4-6` via claude
@@ -1034,7 +987,6 @@ ta better can you create a .md file to show the plan and implemetntion for the e
 > I want to add enterprise side to help enterprise manage the da
 ta better can you create a .md file to show the plan and implemetntion for the enterprise, we can keep it simple since I have less time 
 
-- Session duration: 5m 0s
 - Avg AI response: 5.3s
 
 #### src/core/config.rs | `claude-opus-4-6` via claude
@@ -1051,7 +1003,6 @@ ta better can you create a .md file to show the plan and implemetntion for the e
 > I want to add enterprise side to help enterprise manage the da
 ta better can you create a .md file to show the plan and implemetntion for the enterprise, we can keep it simple since I have less time 
 
-- Session duration: 5m 3s
 - Avg AI response: 5.2s
 
 #### src/core/config.rs | `claude-opus-4-6` via claude
@@ -1068,7 +1019,6 @@ ta better can you create a .md file to show the plan and implemetntion for the e
 > I want to add enterprise side to help enterprise manage the da
 ta better can you create a .md file to show the plan and implemetntion for the enterprise, we can keep it simple since I have less time 
 
-- Session duration: 5m 7s
 - Avg AI response: 5.2s
 
 #### src/core/config.rs | `claude-opus-4-6` via claude
@@ -1085,7 +1035,6 @@ ta better can you create a .md file to show the plan and implemetntion for the e
 > I want to add enterprise side to help enterprise manage the da
 ta better can you create a .md file to show the plan and implemetntion for the enterprise, we can keep it simple since I have less time 
 
-- Session duration: 5m 12s
 - Avg AI response: 5.2s
 
 #### src/commands/enterprise.rs | `claude-opus-4-6` via claude
@@ -1102,7 +1051,6 @@ ta better can you create a .md file to show the plan and implemetntion for the e
 > I want to add enterprise side to help enterprise manage the da
 ta better can you create a .md file to show the plan and implemetntion for the enterprise, we can keep it simple since I have less time 
 
-- Session duration: 5m 21s
 - Avg AI response: 5.1s
 
 #### src/commands/mod.rs | `claude-opus-4-6` via claude
@@ -1119,7 +1067,6 @@ ta better can you create a .md file to show the plan and implemetntion for the e
 > I want to add enterprise side to help enterprise manage the da
 ta better can you create a .md file to show the plan and implemetntion for the enterprise, we can keep it simple since I have less time 
 
-- Session duration: 6m 5s
 - Avg AI response: 5.1s
 
 #### src/main.rs | `claude-opus-4-6` via claude
@@ -1136,7 +1083,6 @@ ta better can you create a .md file to show the plan and implemetntion for the e
 > I want to add enterprise side to help enterprise manage the da
 ta better can you create a .md file to show the plan and implemetntion for the enterprise, we can keep it simple since I have less time 
 
-- Session duration: 6m 11s
 - Avg AI response: 5.0s
 
 #### src/main.rs | `claude-opus-4-6` via claude
@@ -1153,7 +1099,6 @@ ta better can you create a .md file to show the plan and implemetntion for the e
 > I want to add enterprise side to help enterprise manage the da
 ta better can you create a .md file to show the plan and implemetntion for the enterprise, we can keep it simple since I have less time 
 
-- Session duration: 6m 17s
 - Avg AI response: 5.0s
 
 #### src/main.rs | `claude-opus-4-6` via claude
@@ -1170,7 +1115,6 @@ ta better can you create a .md file to show the plan and implemetntion for the e
 > I want to add enterprise side to help enterprise manage the da
 ta better can you create a .md file to show the plan and implemetntion for the enterprise, we can keep it simple since I have less time 
 
-- Session duration: 6m 26s
 - Avg AI response: 4.9s
 
 #### README.md | `claude-opus-4-6` via claude
@@ -1187,7 +1131,6 @@ ta better can you create a .md file to show the plan and implemetntion for the e
 > I want to add enterprise side to help enterprise manage the da
 ta better can you create a .md file to show the plan and implemetntion for the enterprise, we can keep it simple since I have less time 
 
-- Session duration: 7m 49s
 - Avg AI response: 5.0s
 
 #### README.md | `claude-opus-4-6` via claude
@@ -1204,7 +1147,6 @@ ta better can you create a .md file to show the plan and implemetntion for the e
 > I want to add enterprise side to help enterprise manage the da
 ta better can you create a .md file to show the plan and implemetntion for the enterprise, we can keep it simple since I have less time 
 
-- Session duration: 8m 5s
 - Avg AI response: 5.0s
 
 #### README.md | `claude-opus-4-6` via claude
@@ -1221,8 +1163,22 @@ ta better can you create a .md file to show the plan and implemetntion for the e
 > I want to add enterprise side to help enterprise manage the da
 ta better can you create a .md file to show the plan and implemetntion for the enterprise, we can keep it simple since I have less time 
 
-- Session duration: 8m 12s
 - Avg AI response: 5.0s
+
+#### src/commands/report.rs | `claude-opus-4-6` via claude
+
+| Field | Value |
+|-------|-------|
+| Session ID | `7f2e447b-2c93-497e-bb43-87dc91a66e41` |
+| Messages | 544 |
+| Cost | $0.1366 |
+| Lines | 1-1 |
+| Prompt Hash | `sha256:9b61f55c862f3340ab8d4cdfc8ee59c4e5b5610aa4c7d050c47539efc3ceb592` |
+
+**Prompt:**
+> use @CHAIN_OF_THOUGHT.md and iplementt that into the exisiting code 
+
+- Avg AI response: 4.9s
 
 ---
 

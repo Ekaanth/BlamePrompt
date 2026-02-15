@@ -153,15 +153,25 @@ pub fn run_soc2(output: &str, from: Option<&str>, to: Option<&str>) {
     }
     md.push_str("\n");
 
-    // 5. Timeline
+    // 5. Timeline — group by session to avoid repeating same session duration
     md.push_str("## 5. Timeline — When AI Was Used\n\n");
+    let mut sessions_shown: std::collections::HashSet<String> = std::collections::HashSet::new();
     for entry in &entries {
         for r in &entry.receipts {
             let sha_short = if entry.commit_sha.len() >= 8 { &entry.commit_sha[..8] } else { &entry.commit_sha };
-            let duration = r.session_duration_secs.map(|d| format!("{}m {}s", d / 60, d % 60)).unwrap_or_else(|| "N/A".to_string());
             let rel_file = relative_path(&r.file_path);
-            md.push_str(&format!("- **{}** `{}` — {} used {} on `{}` (session: {}, duration: {})\n",
-                r.timestamp.format("%Y-%m-%d %H:%M"), sha_short, r.user, r.model, rel_file, &r.session_id[..8.min(r.session_id.len())], duration));
+
+            // Only show session duration on first receipt per session
+            let duration_str = if sessions_shown.insert(r.session_id.clone()) {
+                r.session_duration_secs
+                    .map(|d| format!(", session duration: {}", crate::core::session_stats::format_duration(d)))
+                    .unwrap_or_default()
+            } else {
+                String::new()
+            };
+
+            md.push_str(&format!("- **{}** `{}` — {} used {} on `{}`{}\n",
+                r.timestamp.format("%Y-%m-%d %H:%M"), sha_short, r.user, r.model, rel_file, duration_str));
         }
     }
     md.push_str("\n");

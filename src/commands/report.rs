@@ -1,6 +1,6 @@
 use crate::commands::audit;
 use crate::commands::audit::relative_path;
-use crate::core::{model_classifier, redact};
+use crate::core::{model_classifier, redact, session_stats};
 use crate::core::receipt::Receipt;
 use chrono::Utc;
 use std::collections::{HashMap, HashSet};
@@ -287,46 +287,26 @@ fn write_user_contributions(md: &mut String, receipts: &[&Receipt]) {
 fn write_time_analysis(md: &mut String, receipts: &[&Receipt]) {
     writeln!(md, "## Time & AI Generation Analysis\n").ok();
 
-    // Deduplicate sessions — each session_id should only count once for duration
-    let mut session_durations: HashMap<String, u64> = HashMap::new();
-    for r in receipts {
-        if let Some(dur) = r.session_duration_secs {
-            // Only keep the max duration per session (in case of slight variations)
-            let entry = session_durations.entry(r.session_id.clone()).or_insert(0);
-            if dur > *entry {
-                *entry = dur;
-            }
-        }
-    }
-
-    let unique_session_count = session_durations.len();
-    let total_duration_secs: u64 = session_durations.values().sum();
+    let stats = session_stats::calculate(receipts);
 
     let total_ai_lines: u32 = receipts.iter().map(|r| {
         if r.line_range.1 >= r.line_range.0 { r.line_range.1 - r.line_range.0 + 1 } else { 0 }
     }).sum();
 
-    let hours = total_duration_secs / 3600;
-    let minutes = (total_duration_secs % 3600) / 60;
+    let estimated_saved_hours = session_stats::estimate_dev_hours_saved(total_ai_lines);
 
     writeln!(md, "### Total Time Invested in AI").ok();
     writeln!(md, "| Metric | Value |").ok();
     writeln!(md, "|--------|-------|").ok();
-    writeln!(md, "| Total AI session time | {}h {}m |", hours, minutes).ok();
-    writeln!(md, "| Unique sessions | {} |", unique_session_count).ok();
-    if unique_session_count > 0 {
-        let avg = total_duration_secs / unique_session_count as u64;
-        writeln!(md, "| Avg session duration | {}m {}s |", avg / 60, avg % 60).ok();
+    writeln!(md, "| Total AI session time | {} |", session_stats::format_duration(stats.total_duration_secs)).ok();
+    writeln!(md, "| Unique sessions | {} |", stats.unique_sessions).ok();
+    if stats.unique_sessions > 0 {
+        writeln!(md, "| Avg session duration | {} |", session_stats::format_duration(stats.avg_duration_secs)).ok();
     }
-    // Estimate dev-hours saved: use 30s per AI line (conservative industry estimate)
-    // A developer writes ~10 lines/hour for complex code, ~50 lines/hour for boilerplate
-    // Average ~25 lines/hour = ~144s/line. AI removes ~80% of that effort = ~115s saved/line.
-    // We use a conservative 30s/line to avoid overclaiming.
-    let estimated_saved_hours = (total_ai_lines as f64 * 30.0) / 3600.0;
     writeln!(md, "| Total AI-generated lines | {} |", total_ai_lines).ok();
     writeln!(md, "| Estimated dev-hours saved | ~{:.1}h ({} AI lines x 30s/line) |", estimated_saved_hours, total_ai_lines).ok();
-    if total_duration_secs > 0 && estimated_saved_hours > 0.0 {
-        let roi = estimated_saved_hours / (total_duration_secs as f64 / 3600.0);
+    if stats.total_duration_secs > 0 && estimated_saved_hours > 0.0 {
+        let roi = estimated_saved_hours / (stats.total_duration_secs as f64 / 3600.0);
         writeln!(md, "| Time ROI | {:.1}x |", roi).ok();
     }
     writeln!(md).ok();
@@ -519,6 +499,9 @@ fn write_prompt_details(md: &mut String, entries: &[audit::AuditEntry]) {
     writeln!(md, "## Prompt Details\n").ok();
     writeln!(md, "Full prompt context for each AI-assisted change.\n").ok();
 
+    // Track which sessions have already shown their duration
+    let mut sessions_shown: HashSet<String> = HashSet::new();
+
     for entry in entries {
         if entry.receipts.is_empty() {
             continue;
@@ -553,8 +536,11 @@ fn write_prompt_details(md: &mut String, entries: &[audit::AuditEntry]) {
             writeln!(md, "**Prompt:**").ok();
             writeln!(md, "> {}\n", r.prompt_summary).ok();
 
-            if let Some(duration) = r.session_duration_secs {
-                writeln!(md, "- Session duration: {}m {}s", duration / 60, duration % 60).ok();
+            // Only show session duration on first receipt per session
+            if sessions_shown.insert(r.session_id.clone()) {
+                if let Some(duration) = r.session_duration_secs {
+                    writeln!(md, "- Session duration: {}", session_stats::format_duration(duration)).ok();
+                }
             }
             if let Some(response_time) = r.ai_response_time_secs {
                 writeln!(md, "- Avg AI response: {:.1}s", response_time).ok();
