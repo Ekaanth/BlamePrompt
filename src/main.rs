@@ -49,6 +49,19 @@ enum Commands {
         purge: bool,
     },
 
+    /// Update BlamePrompt to the latest (or a specific) version
+    Update {
+        /// Only check for updates, don't install
+        #[arg(long)]
+        check: bool,
+        /// Force update even if already on latest
+        #[arg(long)]
+        force: bool,
+        /// Install a specific version (e.g. "0.2.0" or "v0.2.0")
+        #[arg(long)]
+        version: Option<String>,
+    },
+
     /// Show line-by-line AI/human attribution for a file
     Blame {
         /// File to analyze
@@ -419,6 +432,17 @@ fn main() {
 
         Commands::Uninstall { keep_notes, purge } => {
             if let Err(e) = commands::uninstall::run(keep_notes, purge) {
+                eprintln!("Error: {}", e);
+                std::process::exit(1);
+            }
+        }
+
+        Commands::Update {
+            check,
+            force,
+            version,
+        } => {
+            if let Err(e) = commands::update::run(check, force, version) {
                 eprintln!("Error: {}", e);
                 std::process::exit(1);
             }
