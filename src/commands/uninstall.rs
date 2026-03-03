@@ -45,6 +45,9 @@ pub fn run(keep_notes: bool, purge: bool) -> Result<(), String> {
     // 2. Remove git hooks from current repo
     crate::git::hooks::uninstall_hooks()?;
 
+    // 2a. Remove the transparent git shim (~/.blameprompt/bin/git)
+    crate::git::wrap::uninstall()?;
+
     // 3. Remove staging directory from current repo
     remove_staging_dir()?;
 
@@ -53,6 +56,15 @@ pub fn run(keep_notes: bool, purge: bool) -> Result<(), String> {
 
     // 5. Reset git init.templateDir (stops future repos from getting hooks)
     remove_git_template()?;
+
+    // 5a. Remove the PATH injection added to the user's shell RC file.
+    //     Must happen before we delete ~/.blameprompt/ so the content check still works.
+    crate::git::wrap::remove_path_from_shell_rc();
+
+    // 5b. Write an explicit uninstall marker so auto_setup() won't quietly reinstall
+    //     everything the next time any blameprompt command is invoked. This MUST happen
+    //     before remove_global_data() removes ~/.blameprompt/ (and .setup-done with it).
+    write_uninstall_marker();
 
     // 6. Remove ~/.blameprompt/ (SQLite cache, git template, setup marker)
     remove_global_data()?;
@@ -74,11 +86,20 @@ pub fn run(keep_notes: bool, purge: bool) -> Result<(), String> {
     println!("{bw}BlamePrompt uninstalled.{r}");
     println!("  {bg}✓{r} Global hooks removed");
     println!("  {bg}✓{r} Git template removed");
+    println!("  {bg}✓{r} Shell PATH entry removed {d}(git is now served from its original location){r}");
     if !purge {
         println!(
             "  {bg}✓{r} Git Notes preserved {d}(your receipt history is still in the repo){r}"
         );
     }
+    println!();
+    println!("  {d}→ Open a new terminal (or run: source ~/.zshrc) for PATH changes to take effect.{r}");
+    println!();
+    // Warn about other repos that still have stale hook files installed
+    println!("  {by}[note]{r} {b}Other git repositories may still have BlamePrompt hook files.{r}");
+    println!("         {d}Run the following in each affected repo to clean up:{r}");
+    println!("           {bc}git init{r}  {d}(re-applies your global git template, now empty){r}");
+    println!("         {d}Or reinstall BlamePrompt and run:{r} {bc}blameprompt uninstall{r} {d}from each repo.{r}");
     println!();
 
     Ok(())
@@ -146,13 +167,41 @@ fn remove_git_template() -> Result<(), String> {
     if let Ok(out) = output {
         let current = String::from_utf8_lossy(&out.stdout).trim().to_string();
         if current.contains(".blameprompt") {
-            let _ = std::process::Command::new("git")
+            // Explicitly check if the unset succeeded — a silent failure here would leave
+            // init.templateDir pointing at a deleted directory, breaking VS Code SCM.
+            let status = std::process::Command::new("git")
                 .args(["config", "--global", "--unset", "init.templateDir"])
-                .status();
-            println!("  \x1b[1;32m[done]\x1b[0m Reset git init.templateDir");
+                .status()
+                .map_err(|e| format!("Cannot run git config: {}", e))?;
+
+            if status.success() {
+                println!("  \x1b[1;32m[done]\x1b[0m Reset git init.templateDir");
+            } else {
+                // Non-fatal: warn but continue. VS Code may still work if git falls back
+                // gracefully, and the user is informed so they can fix it manually.
+                println!(
+                    "  \x1b[1;33m[warn]\x1b[0m Could not unset init.templateDir automatically."
+                );
+                println!(
+                    "         Run manually: \x1b[36mgit config --global --unset init.templateDir\x1b[0m"
+                );
+            }
         }
     }
     Ok(())
+}
+
+/// Write a sentinel file at ~/.blameprompt-uninstalled so that auto_setup() in
+/// init_hooks.rs skips reinstallation after uninstall. Without this, the next
+/// blameprompt invocation would see no .setup-done marker and silently reinstall
+/// everything — defeating the uninstall entirely.
+fn write_uninstall_marker() {
+    let home = match dirs::home_dir() {
+        Some(h) => h,
+        None => return,
+    };
+    let marker = home.join(".blameprompt-uninstalled");
+    let _ = std::fs::write(&marker, "1");
 }
 
 fn remove_git_notes() -> Result<(), String> {

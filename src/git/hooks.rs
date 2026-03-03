@@ -55,8 +55,25 @@ if [ -x "$BLAMEPROMPT" ]; then
     if [ ! -d "$BP_DIR" ]; then
         mkdir -p "$BP_DIR"
         echo '{{"receipts":[]}}' > "$BP_DIR/staging.json"
-        # Add .blameprompt/ to .gitignore if not already present
-        if [ ! -f .gitignore ] || ! grep -q '\.blameprompt' .gitignore 2>/dev/null; then
+        # Add .blameprompt/ to .gitignore only if not already covered by any
+        # ignore source: local .gitignore, global excludesFile, or .git/info/exclude.
+        _BP_ALREADY_IGNORED=0
+        if [ -f .gitignore ] && grep -q '\.blameprompt' .gitignore 2>/dev/null; then
+            _BP_ALREADY_IGNORED=1
+        fi
+        if [ "$_BP_ALREADY_IGNORED" = "0" ]; then
+            _BP_GLOBAL_IGNORE=$(git config --global --get core.excludesFile 2>/dev/null)
+            if [ -z "$_BP_GLOBAL_IGNORE" ] && [ -f "$HOME/.gitignore_global" ]; then
+                _BP_GLOBAL_IGNORE="$HOME/.gitignore_global"
+            fi
+            if [ -n "$_BP_GLOBAL_IGNORE" ] && [ -f "$_BP_GLOBAL_IGNORE" ] && grep -q '\.blameprompt' "$_BP_GLOBAL_IGNORE" 2>/dev/null; then
+                _BP_ALREADY_IGNORED=1
+            fi
+        fi
+        if [ "$_BP_ALREADY_IGNORED" = "0" ] && [ -f ".git/info/exclude" ] && grep -q '\.blameprompt' .git/info/exclude 2>/dev/null; then
+            _BP_ALREADY_IGNORED=1
+        fi
+        if [ "$_BP_ALREADY_IGNORED" = "0" ]; then
             printf '\n# BlamePrompt staging (auto-generated)\n.blameprompt/\n' >> .gitignore
         fi
     fi
@@ -69,6 +86,7 @@ fi
         binary = binary
     )
 }
+
 
 fn post_merge_hook(binary: &str) -> String {
     format!(

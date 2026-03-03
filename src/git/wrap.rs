@@ -92,14 +92,18 @@ pub fn install() -> Result<PathBuf, String> {
 }
 
 /// Uninstall the git shim.
-#[allow(dead_code)]
 pub fn uninstall() -> Result<(), String> {
     let shim = shim_path().ok_or("Cannot determine home directory")?;
     if shim.exists() {
         std::fs::remove_file(&shim).map_err(|e| format!("Cannot remove git shim: {}", e))?;
+        println!("  \x1b[1;32m[done]\x1b[0m Removed git shim \x1b[2m(~/.blameprompt/bin/git)\x1b[0m");
     }
     Ok(())
 }
+
+/// The PATH export block added/removed from shell RC files.
+const PATH_EXPORT_BLOCK: &str =
+    "\n# BlamePrompt git wrapper — transparent AI receipt tracking\nexport PATH=\"$HOME/.blameprompt/bin:$PATH\"\n";
 
 /// Append `export PATH="$HOME/.blameprompt/bin:$PATH"` to the first found shell RC file
 /// that doesn't already contain it.
@@ -108,8 +112,6 @@ fn inject_path_into_shell_rc() {
         Some(h) => h,
         None => return,
     };
-
-    let path_export = "\n# BlamePrompt git wrapper — transparent AI receipt tracking\nexport PATH=\"$HOME/.blameprompt/bin:$PATH\"\n";
 
     // Try RC files in preference order
     for rc_name in &[".zshrc", ".bashrc", ".bash_profile", ".profile"] {
@@ -125,16 +127,86 @@ fn inject_path_into_shell_rc() {
                 std::fs::OpenOptions::new()
                     .append(true)
                     .open(&rc_path)
-                    .and_then(|mut f| f.write_all(path_export.as_bytes()))
+                    .and_then(|mut f| f.write_all(PATH_EXPORT_BLOCK.as_bytes()))
             };
             return; // Only patch the first found RC file
         }
     }
 }
 
+/// Remove the BlamePrompt PATH export block from whichever shell RC file contains it.
+/// This is the inverse of `inject_path_into_shell_rc()`.
+pub fn remove_path_from_shell_rc() {
+    let home = match dirs::home_dir() {
+        Some(h) => h,
+        None => return,
+    };
+
+    for rc_name in &[".zshrc", ".bashrc", ".bash_profile", ".profile"] {
+        let rc_path = home.join(rc_name);
+        if !rc_path.exists() {
+            continue;
+        }
+        let content = match std::fs::read_to_string(&rc_path) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+        if !content.contains(".blameprompt/bin") {
+            continue;
+        }
+        // Remove the block (handle both \r\n and \n line endings)
+        let cleaned = remove_blameprompt_path_block(&content);
+        let _ = std::fs::write(&rc_path, &cleaned);
+        println!(
+            "  \x1b[1;32m[done]\x1b[0m Removed BlamePrompt PATH from \x1b[2m~/{rc_name}\x1b[0m"
+        );
+        return; // Only one file will have it
+    }
+}
+
+/// Strip the BlamePrompt PATH export lines from a shell RC file contents string.
+#[allow(dead_code)] // also used in tests
+pub(crate) fn remove_blameprompt_path_block(content: &str) -> String {
+    // The block we injected is exactly:
+    //   \n# BlamePrompt git wrapper — transparent AI receipt tracking\nexport PATH="$HOME/.blameprompt/bin:$PATH"\n
+    // We remove the comment line and the export line wherever they appear together.
+    let mut result = content.to_string();
+    // Remove the comment line
+    result = result.replace(
+        "# BlamePrompt git wrapper — transparent AI receipt tracking\n",
+        "",
+    );
+    // Remove the export line
+    result = result.replace(
+        "export PATH=\"$HOME/.blameprompt/bin:$PATH\"\n",
+        "",
+    );
+    // Collapse any resulting double blank lines
+    while result.contains("\n\n\n") {
+        result = result.replace("\n\n\n", "\n\n");
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_remove_blameprompt_path_block_removes_only_its_lines() {
+        let rc = "export FOO=bar\n\n# BlamePrompt git wrapper \u{2014} transparent AI receipt tracking\nexport PATH=\"$HOME/.blameprompt/bin:$PATH\"\nexport BAR=baz\n";
+        let cleaned = remove_blameprompt_path_block(rc);
+        assert!(
+            !cleaned.contains(".blameprompt/bin"),
+            "blameprompt PATH line should be removed"
+        );
+        assert!(
+            !cleaned.contains("BlamePrompt git wrapper"),
+            "comment line should be removed"
+        );
+        assert!(cleaned.contains("export FOO=bar"), "other lines preserved");
+        assert!(cleaned.contains("export BAR=baz"), "other lines preserved");
+    }
 
     #[test]
     fn test_shim_content_contains_key_logic() {

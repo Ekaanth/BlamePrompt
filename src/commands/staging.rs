@@ -29,17 +29,11 @@ fn ensure_staging_dir_in(base: &Path) {
     if !dir.exists() {
         let _ = std::fs::create_dir_all(&dir);
     }
-    // Add to .gitignore if not present
-    let gitignore = base.join(".gitignore");
-    let needs_entry = if gitignore.exists() {
-        let content = std::fs::read_to_string(&gitignore).unwrap_or_default();
-        !content
-            .lines()
-            .any(|l| l.trim() == ".blameprompt/" || l.trim() == ".blameprompt")
-    } else {
-        true
-    };
-    if needs_entry {
+
+    // Only add to local .gitignore if .blameprompt/ is not already covered by
+    // any gitignore source (local, global core.excludesFile, or .git/info/exclude).
+    if !is_blameprompt_ignored(base) {
+        let gitignore = base.join(".gitignore");
         let mut file = std::fs::OpenOptions::new()
             .create(true)
             .append(true)
@@ -51,6 +45,51 @@ fn ensure_staging_dir_in(base: &Path) {
         }
     }
 }
+
+/// Returns true if `.blameprompt` or `.blameprompt/` is already covered by any
+/// gitignore source: local `.gitignore`, global excludesFile, or `.git/info/exclude`.
+fn is_blameprompt_ignored(base: &Path) -> bool {
+    let matches_pattern = |content: &str| {
+        content
+            .lines()
+            .any(|l| matches!(l.trim(), ".blameprompt" | ".blameprompt/"))
+    };
+
+    // 1. Local .gitignore
+    let local = base.join(".gitignore");
+    if local.exists() && matches_pattern(&std::fs::read_to_string(&local).unwrap_or_default()) {
+        return true;
+    }
+
+    // 2. Global gitignore (core.excludesFile or ~/.gitignore_global)
+    let global_path = std::process::Command::new("git")
+        .args(["config", "--global", "--get", "core.excludesFile"])
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .or_else(|| {
+            dirs::home_dir()
+                .map(|h| h.join(".gitignore_global").to_string_lossy().to_string())
+        });
+
+    if let Some(path) = global_path {
+        let p = std::path::Path::new(&path);
+        if p.exists() && matches_pattern(&std::fs::read_to_string(p).unwrap_or_default()) {
+            return true;
+        }
+    }
+
+    // 3. .git/info/exclude
+    let exclude = base.join(".git").join("info").join("exclude");
+    if exclude.exists() && matches_pattern(&std::fs::read_to_string(&exclude).unwrap_or_default()) {
+        return true;
+    }
+
+    false
+}
+
 
 /// Insert or update a receipt in the staging file at `base_dir`.
 /// Deduplicates by (session_id, prompt_number) so each user prompt in a session
