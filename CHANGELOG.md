@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-03-03
+
+### Added
+
+- **Multi-agent support** — Added session recording and attribution for Cursor, GitHub Copilot, OpenAI Codex, Google Gemini, and Windsurf (`blameprompt record-*`).
+- **Subagent activity tracking** — Captures the full tree of sub-agents spawned by primary tools (Explore, Plan, etc.), including tool usage and duration.
+- **Per-token cost isolation** — Granular tracking of input, output, cache read, and cache creation tokens for hyper-accurate spend reporting.
+- **Cache-aware pricing** — Support for 30+ models with automatic 90% discounts for cached reads and 25% surcharges for cache creation.
+- **`blameprompt github-comment`** — Automated PR attribution summaries for CI/CD, including model used, cost, and security scan results.
+- **`blameprompt hackathon-report`** — Verifiable audit engine for AI vs. human contributions in coding competitions.
+- **`blameprompt diff`** — Specialized diff viewer showing exactly which lines in a change were AI-generated vs. human-written.
+- **Accepted vs. Overridden tracking** — Compares AI suggestions against final commits to track developer oversight and AI efficacy.
+- **VS Code Extension** — Native editor integration with gutter markers, hover tooltips, prompt history sidebar, and interactive conversation graphs.
+- **`blameprompt update`** — Built-in self-updater for seamless CLI evolution.
+- **Refined Receipt Metadata** — Added response summaries, file change metadata, and full conversation turn history to the storage layer.
+
+### Changed
+
+- Updated pricing engine to support the latest 2026 model pricing (Claude 4.6, GPT-4.1, Gemini 2.5).
+- Improved CLI output formatting for `blame` and `audit` commands.
+- Enhanced redaction engine with broader pattern coverage for cloud provider secrets.
+
 ## [0.1.0] - 2026-02-24
 
 ### Added
