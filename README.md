@@ -36,15 +36,16 @@ All detected agents are auto-configured when you run `blameprompt init --global`
 | **Google Gemini CLI** | `~/.gemini/settings.json` | `blameprompt record-gemini` |
 | **Cursor** | `~/.cursor/hooks.json` | `blameprompt record-cursor` |
 | **Windsurf (Codeium)** | `~/.windsurf/hooks.json` | `blameprompt record-windsurf` |
+| **Antigravity IDE** | `~/.antigravity/settings.json` | `blameprompt record-antigravity` |
 | **Any provider** | — | `blameprompt record --session <file> --provider <name>` |
 
 The `record-*` commands are only needed to import **historical sessions** from before blameprompt was installed. Once hooks are active, all new AI activity is tracked automatically.
 
 ## VS Code extension
 
-> Coming soon.
+Install from [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Blameprompt.blameprompt).
 
-The companion VS Code extension will provide a rich sidebar with three views:
+The companion VS Code extension provides a rich sidebar with three views:
 
 **Prompt Receipts** — tree view structured as:
 ```
@@ -118,7 +119,7 @@ Every AI receipt includes:
 
 | Field | Example |
 |-------|---------|
-| **Provider** | `claude`, `copilot`, `codex`, `gemini`, `cursor`, `windsurf` |
+| **Provider** | `claude`, `copilot`, `codex`, `gemini`, `cursor`, `windsurf`, `antigravity` |
 | **Model** | `claude-opus-4-6`, `gpt-4o`, `gemini-2.5-pro`, `codex-mini` |
 | **User** | `Jane Doe <jane@example.com>` |
 | **Timestamp** | `2026-02-24T14:32:00Z` |
@@ -135,6 +136,8 @@ Every AI receipt includes:
 | **MCP servers** | `filesystem`, `github` |
 | **Agents spawned** | `"Explore codebase (Explore)"`, `"Run tests (Bash)"` |
 | **Chain of thought** | Full conversation turns (user, AI, tool calls) |
+| **Prompt quality** | `82/100 (excellent)` — clarity 85%, actionability 78%, context 80%, efficiency 84% |
+| **Prompt category** | `code_generation`, `bug_fix`, `refactor`, `question`, `command`, `clarification`, `file_operation`, `continuation` |
 | **Acceptance rate** | `92% (46 accepted, 4 overridden)` |
 | **Parent receipt** | Links to previous receipt in the session chain |
 
@@ -210,6 +213,7 @@ blameprompt record-codex                    # import OpenAI Codex CLI transcript
 blameprompt record-gemini                   # import Google Gemini CLI sessions
 blameprompt record-cursor                   # import Cursor IDE sessions
 blameprompt record-windsurf                 # import Windsurf/Codeium sessions
+blameprompt record-antigravity              # import Antigravity IDE sessions
 blameprompt record --session <file>         # import any JSONL transcript
 blameprompt record --session <file> --provider openai
 ```
