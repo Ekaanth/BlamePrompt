@@ -5,13 +5,25 @@ use std::process::Command;
 
 /// Convert an absolute path to one relative to `base`.
 /// Returns the path unchanged if it doesn't start with `base` or is already relative.
+/// When `base` is empty or `"."`, resolves it to the actual current directory so that
+/// absolute paths can still be relativized.
 pub fn make_relative(path: &str, base: &str) -> String {
     let path = path.trim();
     let base = base.trim_end_matches('/');
-    if base.is_empty() || base == "." {
-        return path.to_string();
-    }
-    if let Some(rel) = path.strip_prefix(base) {
+    let resolved_base = if base.is_empty() || base == "." {
+        // If the path is already relative, no need to resolve cwd
+        if !path.starts_with('/') {
+            return path.to_string();
+        }
+        // Resolve actual cwd to relativize absolute paths
+        match std::env::current_dir() {
+            Ok(cwd) => cwd.to_string_lossy().to_string(),
+            Err(_) => return path.to_string(),
+        }
+    } else {
+        base.to_string()
+    };
+    if let Some(rel) = path.strip_prefix(resolved_base.as_str()) {
         let rel = rel.strip_prefix('/').unwrap_or(rel);
         if rel.is_empty() {
             return path.to_string();

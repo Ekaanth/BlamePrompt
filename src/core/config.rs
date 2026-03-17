@@ -2,6 +2,7 @@ use serde::Deserialize;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Deserialize, Clone, Default)]
+#[allow(dead_code)]
 pub struct BlamePromptConfig {
     #[serde(default)]
     pub redaction: RedactionConfig,
@@ -12,6 +13,7 @@ pub struct BlamePromptConfig {
 }
 
 #[derive(Debug, Deserialize, Clone, Default)]
+#[allow(dead_code)]
 pub struct CloudConfig {
     #[serde(default = "default_api_url")]
     pub api_url: String,

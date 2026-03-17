@@ -55,14 +55,20 @@ impl GeminiSession {
             })
             .collect();
 
+        let session_end = self.end_timestamp.unwrap_or(self.timestamp);
+        let session_duration_secs = self.end_timestamp.map(|end| {
+            let dur = (end - self.timestamp).num_seconds();
+            if dur > 0 { Some(dur as u64) } else { None }
+        }).flatten();
+
         TranscriptParseResult {
             transcript: Transcript { messages },
             model: Some(self.model.clone()),
             session_id: self.session_id.clone(),
             files_modified: self.files_modified.clone(),
             session_start: Some(self.timestamp),
-            session_end: Some(self.timestamp),
-            session_duration_secs: None,
+            session_end: Some(session_end),
+            session_duration_secs,
             avg_response_time_secs: None,
             user_prompt_timestamps: vec![],
         }

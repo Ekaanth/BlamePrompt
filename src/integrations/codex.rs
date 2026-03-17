@@ -113,6 +113,7 @@ fn collect_session_files_recursive(dir: &Path, files: &mut Vec<PathBuf>) {
 
 /// Find a specific session file by session ID (matching rollout-*{session_id}*.jsonl pattern).
 /// Selects the newest matching file by modification time.
+#[allow(dead_code)]
 pub fn find_session_by_id(session_id: &str) -> Option<PathBuf> {
     let dirs = find_sessions_dirs();
     let mut candidates: Vec<PathBuf> = Vec::new();

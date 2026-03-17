@@ -10,7 +10,7 @@ use sha2::{Digest, Sha256};
 use std::io::Read;
 use std::path::Path;
 use transcript::{
-    count_concurrent_tools, extract_agents_for_prompt, extract_mcps_for_prompt,
+    count_concurrent_tools_for_prompt, extract_agents_for_prompt, extract_mcps_for_prompt,
     extract_tools_for_prompt, token_usage_for_prompt,
 };
 
@@ -118,6 +118,7 @@ fn parse_hook_input(json_str: &str) -> HookInput {
 /// Return all files currently modified (unstaged + staged) relative to HEAD.
 /// Uses `git diff --name-only HEAD` to capture changes from any tool (Bash, Write, etc.).
 fn get_all_git_modified_files(cwd: &str) -> Vec<String> {
+    let effective_cwd = if cwd.is_empty() { "." } else { cwd };
     // Combine unstaged and staged changes relative to HEAD
     let mut files: Vec<String> = Vec::new();
     for args in &[
@@ -126,7 +127,7 @@ fn get_all_git_modified_files(cwd: &str) -> Vec<String> {
         &["diff", "--name-only"][..],
     ] {
         if let Ok(o) = std::process::Command::new("git")
-            .current_dir(cwd)
+            .current_dir(effective_cwd)
             .args(*args)
             .output()
         {
@@ -143,13 +144,14 @@ fn get_all_git_modified_files(cwd: &str) -> Vec<String> {
 
 /// Get the git blob SHA of the current file contents.
 fn get_blob_hash(cwd: &str, file_path: &str) -> Option<String> {
+    let effective_cwd = if cwd.is_empty() { "." } else { cwd };
     let full_path = if std::path::Path::new(file_path).is_absolute() {
         file_path.to_string()
     } else {
-        format!("{}/{}", cwd.trim_end_matches('/'), file_path)
+        format!("{}/{}", effective_cwd.trim_end_matches('/'), file_path)
     };
     let output = std::process::Command::new("git")
-        .current_dir(cwd)
+        .current_dir(effective_cwd)
         .args(["hash-object", &full_path])
         .output()
         .ok()?;
@@ -165,6 +167,7 @@ fn get_blob_hash(cwd: &str, file_path: &str) -> Option<String> {
 /// Get additions and deletions for a file using git diff --numstat.
 /// Returns (additions, deletions). Tries unstaged, staged, then HEAD diffs.
 fn get_diff_stats(cwd: &str, file_path: &str) -> (u32, u32) {
+    let effective_cwd = if cwd.is_empty() { "." } else { cwd };
     let strategies: &[&[&str]] = &[
         &["diff", "--numstat", "--", file_path],
         &["diff", "--cached", "--numstat", "--", file_path],
@@ -172,7 +175,7 @@ fn get_diff_stats(cwd: &str, file_path: &str) -> (u32, u32) {
     ];
     for args in strategies {
         if let Ok(o) = std::process::Command::new("git")
-            .current_dir(cwd)
+            .current_dir(effective_cwd)
             .args(*args)
             .output()
         {
@@ -195,9 +198,11 @@ fn get_diff_stats(cwd: &str, file_path: &str) -> (u32, u32) {
 
 /// Try to detect changed lines using multiple git diff strategies.
 fn get_changed_lines(cwd: &str, file_path: &str) -> (u32, u32) {
+    let effective_cwd = if cwd.is_empty() { "." } else { cwd };
+
     // Strategy 1: Unstaged changes (git diff)
     if let Ok(o) = std::process::Command::new("git")
-        .current_dir(cwd)
+        .current_dir(effective_cwd)
         .args(["diff", "--unified=0", "--", file_path])
         .output()
     {
@@ -210,7 +215,7 @@ fn get_changed_lines(cwd: &str, file_path: &str) -> (u32, u32) {
 
     // Strategy 2: Staged changes (git diff --cached)
     if let Ok(o) = std::process::Command::new("git")
-        .current_dir(cwd)
+        .current_dir(effective_cwd)
         .args(["diff", "--cached", "--unified=0", "--", file_path])
         .output()
     {
@@ -223,7 +228,7 @@ fn get_changed_lines(cwd: &str, file_path: &str) -> (u32, u32) {
 
     // Strategy 3: Diff against HEAD (catches both staged + unstaged)
     if let Ok(o) = std::process::Command::new("git")
-        .current_dir(cwd)
+        .current_dir(effective_cwd)
         .args(["diff", "HEAD", "--unified=0", "--", file_path])
         .output()
     {
@@ -238,7 +243,7 @@ fn get_changed_lines(cwd: &str, file_path: &str) -> (u32, u32) {
     let full_path = if std::path::Path::new(file_path).is_absolute() {
         file_path.to_string()
     } else {
-        format!("{}/{}", cwd.trim_end_matches('/'), file_path)
+        format!("{}/{}", effective_cwd.trim_end_matches('/'), file_path)
     };
     if let Ok(content) = std::fs::read_to_string(&full_path) {
         let line_count = content.lines().count() as u32;
@@ -1120,7 +1125,7 @@ fn handle_stop(agent: &str, input: &HookInput) {
         agents_spawned: agents.clone(),
         subagent_activities: vec![],
         concurrent_tool_calls: {
-            let c = count_concurrent_tools(&ctx.parsed.transcript);
+            let c = count_concurrent_tools_for_prompt(&ctx.parsed.transcript, current_pn);
             if c > 1 {
                 Some(c)
             } else {

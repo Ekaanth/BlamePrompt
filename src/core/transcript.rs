@@ -802,11 +802,17 @@ pub fn files_for_prompt(transcript: &Transcript, prompt_number: u32) -> Vec<Stri
 
 /// Count the maximum number of tool calls that appear consecutively in the transcript,
 /// approximating the max parallel tool use within a single assistant turn.
+#[allow(dead_code)]
 pub fn count_concurrent_tools(transcript: &Transcript) -> u32 {
+    count_concurrent_tools_in(&transcript.messages)
+}
+
+/// Count max concurrent (consecutive) tool calls in a message slice.
+fn count_concurrent_tools_in(messages: &[Message]) -> u32 {
     let mut max_concurrent: u32 = 0;
     let mut current_streak: u32 = 0;
 
-    for msg in &transcript.messages {
+    for msg in messages {
         match msg {
             Message::ToolUse { .. } => {
                 current_streak += 1;
@@ -818,6 +824,12 @@ pub fn count_concurrent_tools(transcript: &Transcript) -> u32 {
         }
     }
     max_concurrent
+}
+
+/// Count max concurrent tool calls scoped to a specific prompt only.
+pub fn count_concurrent_tools_for_prompt(transcript: &Transcript, prompt_number: u32) -> u32 {
+    let slice = prompt_message_slice(&transcript.messages, prompt_number);
+    count_concurrent_tools_in(slice)
 }
 
 /// Extract structured UserDecision data from AskUserQuestion tool_use/tool_result pairs.

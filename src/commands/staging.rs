@@ -359,13 +359,79 @@ pub fn read_staging() -> StagingData {
     read_staging_in(Path::new("."))
 }
 
+/// Recursively find all `.blameprompt/staging.json` files under `root`.
+fn discover_staging_files(root: &Path) -> Vec<PathBuf> {
+    let mut results = Vec::new();
+    // Check root itself
+    let root_staging = staging_path_in(root);
+    if root_staging.exists() {
+        results.push(root_staging);
+    }
+    // Walk subdirectories (non-recursive manual BFS to avoid pulling in walkdir)
+    let mut dirs_to_visit = vec![root.to_path_buf()];
+    while let Some(dir) = dirs_to_visit.pop() {
+        let entries = match std::fs::read_dir(&dir) {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if !path.is_dir() {
+                continue;
+            }
+            let name = entry.file_name();
+            let name_str = name.to_string_lossy();
+            // Skip hidden dirs (except .blameprompt which we check), .git, node_modules, target
+            if name_str.starts_with('.') || name_str == "node_modules" || name_str == "target" {
+                continue;
+            }
+            // Check if this subdirectory has a .blameprompt/staging.json
+            let sub_staging = staging_path_in(&path);
+            if sub_staging.exists() {
+                results.push(sub_staging);
+            }
+            dirs_to_visit.push(path);
+        }
+    }
+    results
+}
+
+/// Read and merge staging data from ALL `.blameprompt/staging.json` files
+/// found recursively under the given root directory. This handles monorepos
+/// where subfolders (frontend/, backend/, etc.) each have their own staging.
+pub fn read_all_staging_in(root: &Path) -> StagingData {
+    let files = discover_staging_files(root);
+    let mut merged = StagingData::empty();
+    for file in files {
+        if let Ok(content) = std::fs::read_to_string(&file) {
+            if let Ok(data) = serde_json::from_str::<StagingData>(&content) {
+                merged.receipts.extend(data.receipts);
+            }
+        }
+    }
+    merged
+}
+
+/// Read and merge staging data from all `.blameprompt/staging.json` files
+/// found recursively under the current directory.
+pub fn read_all_staging() -> StagingData {
+    read_all_staging_in(Path::new("."))
+}
+
 pub fn clear_staging() {
-    let base = Path::new(".");
-    ensure_staging_dir_in(base);
-    let path = staging_path_in(base);
-    let data = StagingData::empty();
-    if let Ok(json) = serde_json::to_string_pretty(&data) {
-        let _ = std::fs::write(&path, json);
+    clear_all_staging_in(Path::new("."));
+}
+
+/// Clear ALL `.blameprompt/staging.json` files found recursively under `root`.
+fn clear_all_staging_in(root: &Path) {
+    let files = discover_staging_files(root);
+    let empty_data = StagingData::empty();
+    let json = match serde_json::to_string_pretty(&empty_data) {
+        Ok(j) => j,
+        Err(_) => return,
+    };
+    for file in files {
+        let _ = std::fs::write(&file, &json);
     }
 }
 
@@ -401,8 +467,22 @@ fn write_committed_state(base: &Path, state: &CommittedState) {
 
 /// Record the max committed prompt number for each session in the given receipts.
 /// Called by `blameprompt attach` right before clearing staging.
+/// Records into ALL discovered `.blameprompt/` directories so that each
+/// subdirectory's committed state stays in sync.
 pub fn record_committed_prompts(receipts: &[Receipt]) {
-    record_committed_prompts_in(receipts, Path::new("."));
+    let root = Path::new(".");
+    // Record in root
+    record_committed_prompts_in(receipts, root);
+    // Also record in each subdirectory that has a .blameprompt/staging.json
+    for file in discover_staging_files(root) {
+        if let Some(bp_dir) = file.parent() {
+            if let Some(base) = bp_dir.parent() {
+                if base != root {
+                    record_committed_prompts_in(receipts, base);
+                }
+            }
+        }
+    }
 }
 
 pub fn record_committed_prompts_in(receipts: &[Receipt], base: &Path) {
@@ -698,5 +778,66 @@ mod tests {
             Some("CSS variables".to_string())
         );
         assert!(receipt.user_decisions[0].options[0].selected);
+    }
+
+    #[test]
+    fn test_read_all_staging_discovers_subdirectories() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path();
+
+        // Create root staging with 1 receipt
+        let mut r1 = make_receipt("root-session", 1);
+        r1.prompt_summary = "root prompt".to_string();
+        upsert_receipt_in(&r1, root.to_str().unwrap());
+
+        // Create frontend/ subdirectory staging with 1 receipt
+        let frontend = root.join("frontend");
+        std::fs::create_dir_all(&frontend).unwrap();
+        let mut r2 = make_receipt("frontend-session", 1);
+        r2.prompt_summary = "frontend prompt".to_string();
+        upsert_receipt_in(&r2, frontend.to_str().unwrap());
+
+        // Create backend/ subdirectory staging with 2 receipts
+        let backend = root.join("backend");
+        std::fs::create_dir_all(&backend).unwrap();
+        let mut r3 = make_receipt("backend-session", 1);
+        r3.prompt_summary = "backend prompt 1".to_string();
+        upsert_receipt_in(&r3, backend.to_str().unwrap());
+        let mut r4 = make_receipt("backend-session", 2);
+        r4.prompt_summary = "backend prompt 2".to_string();
+        upsert_receipt_in(&r4, backend.to_str().unwrap());
+
+        // read_all_staging_in should find all 4 receipts
+        let merged = read_all_staging_in(root);
+        assert_eq!(merged.receipts.len(), 4);
+
+        let summaries: Vec<&str> = merged.receipts.iter().map(|r| r.prompt_summary.as_str()).collect();
+        assert!(summaries.contains(&"root prompt"));
+        assert!(summaries.contains(&"frontend prompt"));
+        assert!(summaries.contains(&"backend prompt 1"));
+        assert!(summaries.contains(&"backend prompt 2"));
+    }
+
+    #[test]
+    fn test_clear_all_staging_clears_subdirectories() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path();
+
+        // Create staging in root and two subdirectories
+        upsert_receipt_in(&make_receipt("s1", 1), root.to_str().unwrap());
+        let sub = root.join("frontend");
+        std::fs::create_dir_all(&sub).unwrap();
+        upsert_receipt_in(&make_receipt("s2", 1), sub.to_str().unwrap());
+
+        // Verify both have data
+        assert_eq!(read_staging_in(root).receipts.len(), 1);
+        assert_eq!(read_staging_in(&sub).receipts.len(), 1);
+
+        // Clear all
+        clear_all_staging_in(root);
+
+        // Both should be empty now
+        assert_eq!(read_staging_in(root).receipts.len(), 0);
+        assert_eq!(read_staging_in(&sub).receipts.len(), 0);
     }
 }

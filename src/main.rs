@@ -803,7 +803,7 @@ fn main() {
         }
 
         Commands::StagingCount => {
-            let data = commands::staging::read_staging();
+            let data = commands::staging::read_all_staging();
             println!("{}", data.receipts.len());
         }
 
@@ -869,7 +869,7 @@ fn main() {
         }
 
         Commands::Attach { annotate } => {
-            let mut data = commands::staging::read_staging();
+            let mut data = commands::staging::read_all_staging();
             if data.receipts.is_empty() {
                 return;
             }
