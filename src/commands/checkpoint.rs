@@ -265,24 +265,30 @@ pub fn run(agent: &str, hook_input_source: &str) {
 
     let input = parse_hook_input(&json_str);
 
-    match input.hook_event_name.as_deref() {
+    let staging_updated = match input.hook_event_name.as_deref() {
         Some("UserPromptSubmit" | "BeforeTool") => {
             // UserPromptSubmit: Claude Code event
             // BeforeTool: Gemini CLI event
             handle_user_prompt_submit(agent, &input);
+            true
         }
         Some("PostToolUse" | "AfterTool") => match input.tool_name.as_deref() {
             Some("Write" | "Edit" | "MultiEdit" | "write_file" | "replace") => {
                 handle_file_change(agent, &input);
+                true
             }
             Some("AskUserQuestion") => {
                 handle_ask_user_question(&input);
+                true
             }
             _ => {
                 // For other tools in Gemini CLI, if it's AfterTool, we might want to
                 // finalize things or at least track tool usage.
                 if input.hook_event_name.as_deref() == Some("AfterTool") {
                     handle_stop(agent, &input);
+                    true
+                } else {
+                    false
                 }
             }
         },
@@ -290,14 +296,23 @@ pub fn run(agent: &str, hook_input_source: &str) {
             // Finalizes the current prompt's receipt with conversation, tools, and cost.
             // Also creates receipts for any older prompts still missing one.
             handle_stop(agent, &input);
+            true
         }
         Some("SubagentStart") => {
             handle_subagent_start(&input);
+            true
         }
         Some("SubagentStop") => {
             handle_subagent_stop(agent, &input);
+            true
         }
-        _ => {} // skip all other events
+        _ => false, // skip all other events
+    };
+
+    // Auto-sync to cloud in background every time staging is updated.
+    // This ensures the dashboard reflects the latest prompt data in near real-time.
+    if staging_updated {
+        maybe_auto_sync();
     }
 }
 
@@ -1331,6 +1346,31 @@ fn handle_subagent_stop(agent: &str, input: &HookInput) {
             return;
         }
     }
+}
+
+/// Fire-and-forget auto-sync to BlamePrompt Cloud after each prompt completes.
+/// Runs `blameprompt sync --quiet` as a detached background process so it doesn't
+/// block the hook handler. Only triggers if the user is logged in and auto_sync
+/// is enabled in config (or if they are logged in — we default to syncing).
+fn maybe_auto_sync() {
+    // Quick check: if not logged in, skip entirely
+    if !crate::core::auth::is_logged_in() {
+        return;
+    }
+
+    // Get the current binary path for spawning
+    let exe = match std::env::current_exe() {
+        Ok(p) => p,
+        Err(_) => return,
+    };
+
+    // Spawn `blameprompt sync --quiet` in the background (fire-and-forget)
+    let _ = std::process::Command::new(exe)
+        .args(["sync", "--quiet"])
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn();
 }
 
 #[cfg(test)]

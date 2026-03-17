@@ -310,6 +310,36 @@ enum Commands {
         #[arg(long)]
         line: Option<u32>,
     },
+
+    /// Log in to BlamePrompt Cloud via GitHub
+    Login {
+        /// Use an API token directly (for CI/headless environments)
+        #[arg(long)]
+        token: Option<String>,
+        /// API server URL (default: https://api.blameprompt.com)
+        #[arg(long)]
+        api_url: Option<String>,
+    },
+
+    /// Log out of BlamePrompt Cloud
+    Logout,
+
+    /// Sync local prompt data to BlamePrompt Cloud
+    Sync {
+        /// Minimal output (for use in hooks)
+        #[arg(long)]
+        quiet: bool,
+    },
+
+    /// Open your BlamePrompt dashboard in the browser
+    Dash,
+
+    /// Show or edit your BlamePrompt profile
+    Profile {
+        /// Open profile settings in browser
+        #[arg(long)]
+        edit: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -654,6 +684,26 @@ fn main() {
 
         Commands::CheckProvenance { file, line } => {
             commands::check_provenance::run(&file, line);
+        }
+
+        Commands::Login { token, api_url } => {
+            commands::login::run(token.as_deref(), api_url.as_deref());
+        }
+
+        Commands::Logout => {
+            commands::login::logout();
+        }
+
+        Commands::Sync { quiet } => {
+            commands::sync_cloud::run(quiet);
+        }
+
+        Commands::Dash => {
+            commands::dash::run();
+        }
+
+        Commands::Profile { edit } => {
+            commands::profile::run(edit);
         }
 
         Commands::Attach => {

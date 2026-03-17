@@ -335,6 +335,7 @@ fn write_staging_data(data: &StagingData, path: &Path, tmp_path: &Path) {
             eprintln!("[blameprompt] Failed to serialize staging data: {}", e);
         }
     }
+
 }
 
 /// Write staging data to a specific base directory.

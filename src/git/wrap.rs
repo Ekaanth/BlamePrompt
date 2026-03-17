@@ -51,9 +51,12 @@ if [ $_EXIT -eq 0 ]; then
             "$BLAMEPROMPT" attach 2>/dev/null || true
             ;;
         push)
-            # Auto-push AI notes to the same remote
-            _REMOTE="${{2:-origin}}"
-            "$REAL_GIT" push "$_REMOTE" refs/notes/blameprompt 2>/dev/null || true
+            # Auto-push AI notes to the same remote.
+            # Guard: skip if this IS the notes push (prevents pre-push hook recursion).
+            if [ -z "$BLAMEPROMPT_NOTES_PUSH" ]; then
+                _REMOTE="${{2:-origin}}"
+                BLAMEPROMPT_NOTES_PUSH=1 "$REAL_GIT" push "$_REMOTE" refs/notes/blameprompt 2>/dev/null || true
+            fi
             ;;
     esac
 fi

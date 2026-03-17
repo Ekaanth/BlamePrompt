@@ -7,6 +7,20 @@ pub struct BlamePromptConfig {
     pub redaction: RedactionConfig,
     #[serde(default)]
     pub capture: CaptureConfig,
+    #[serde(default)]
+    pub cloud: CloudConfig,
+}
+
+#[derive(Debug, Deserialize, Clone, Default)]
+pub struct CloudConfig {
+    #[serde(default = "default_api_url")]
+    pub api_url: String,
+    #[serde(default)]
+    pub auto_sync: bool,
+}
+
+fn default_api_url() -> String {
+    "https://api.blameprompt.com".to_string()
 }
 
 #[derive(Debug, Deserialize, Clone)]

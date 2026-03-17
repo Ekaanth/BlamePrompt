@@ -18,7 +18,9 @@ fn pre_commit_hook(binary: &str) -> String {
     format!(
         r#"# BlamePrompt pre-commit hook (do not edit between markers)
 {preamble}BLAMEPROMPT="{binary}"
-if [ -x "$BLAMEPROMPT" ]; then
+# Fallback: search augmented PATH (handles stale absolute paths and GUI git clients)
+[ -x "$BLAMEPROMPT" ] || BLAMEPROMPT="$(command -v blameprompt 2>/dev/null || echo '')"
+if [ -n "$BLAMEPROMPT" ] && [ -x "$BLAMEPROMPT" ]; then
     COUNT=$("$BLAMEPROMPT" staging-count 2>/dev/null || echo "0")
     if [ "$COUNT" != "0" ]; then
         echo "[BlamePrompt] $COUNT receipt(s) will be attached to this commit"
@@ -35,9 +37,9 @@ fn post_commit_hook(binary: &str) -> String {
     format!(
         r#"# BlamePrompt post-commit hook (do not edit between markers)
 {preamble}BLAMEPROMPT="{binary}"
-if [ -x "$BLAMEPROMPT" ]; then
-    "$BLAMEPROMPT" attach 2>/dev/null || true
-fi
+# Fallback: search augmented PATH (handles stale absolute paths and GUI git clients)
+[ -x "$BLAMEPROMPT" ] || BLAMEPROMPT="$(command -v blameprompt 2>/dev/null || echo '')"
+[ -n "$BLAMEPROMPT" ] && "$BLAMEPROMPT" attach 2>/dev/null || true
 # /BlamePrompt
 "#,
         preamble = PATH_PREAMBLE,
@@ -49,8 +51,10 @@ fn post_checkout_hook(binary: &str) -> String {
     format!(
         r#"# BlamePrompt post-checkout hook (do not edit between markers)
 {preamble}BLAMEPROMPT="{binary}"
+# Fallback: search augmented PATH (handles stale absolute paths and GUI git clients)
+[ -x "$BLAMEPROMPT" ] || BLAMEPROMPT="$(command -v blameprompt 2>/dev/null || echo '')"
 # Auto-initialize BlamePrompt in new repos after git clone / git checkout
-if [ -x "$BLAMEPROMPT" ]; then
+if [ -n "$BLAMEPROMPT" ] && [ -x "$BLAMEPROMPT" ]; then
     BP_DIR=".blameprompt"
     if [ ! -d "$BP_DIR" ]; then
         mkdir -p "$BP_DIR"
@@ -91,7 +95,9 @@ fn post_merge_hook(binary: &str) -> String {
     format!(
         r#"# BlamePrompt post-merge hook (do not edit between markers)
 {preamble}BLAMEPROMPT="{binary}"
-if [ -x "$BLAMEPROMPT" ]; then
+# Fallback: search augmented PATH (handles stale absolute paths and GUI git clients)
+[ -x "$BLAMEPROMPT" ] || BLAMEPROMPT="$(command -v blameprompt 2>/dev/null || echo '')"
+if [ -n "$BLAMEPROMPT" ] && [ -x "$BLAMEPROMPT" ]; then
     COUNT=$("$BLAMEPROMPT" staging-count 2>/dev/null || echo "0")
     if [ "$COUNT" != "0" ]; then
         echo "[BlamePrompt] $COUNT staged receipt(s) preserved after merge"
@@ -108,8 +114,10 @@ fn post_rewrite_hook(binary: &str) -> String {
     format!(
         r#"# BlamePrompt post-rewrite hook (do not edit between markers)
 {preamble}BLAMEPROMPT="{binary}"
+# Fallback: search augmented PATH (handles stale absolute paths and GUI git clients)
+[ -x "$BLAMEPROMPT" ] || BLAMEPROMPT="$(command -v blameprompt 2>/dev/null || echo '')"
 # Remap BlamePrompt notes after rebase or amend, adjusting line offsets
-if [ -x "$BLAMEPROMPT" ]; then
+if [ -n "$BLAMEPROMPT" ] && [ -x "$BLAMEPROMPT" ]; then
     "$BLAMEPROMPT" rebase-notes
 else
     # Fallback: plain copy without line-offset adjustment
@@ -130,11 +138,15 @@ fn pre_push_hook(binary: &str) -> String {
     format!(
         r#"# BlamePrompt pre-push hook (do not edit between markers)
 {preamble}BLAMEPROMPT="{binary}"
+# Fallback: search augmented PATH (handles stale absolute paths and GUI git clients)
+[ -x "$BLAMEPROMPT" ] || BLAMEPROMPT="$(command -v blameprompt 2>/dev/null || echo '')"
 # Automatically push BlamePrompt notes to the same remote being pushed.
 # $1 = remote name (e.g. "origin"), $2 = remote URL
-if [ -x "$BLAMEPROMPT" ]; then
+# Guard against recursive invocation: when we push notes below, git calls this
+# hook again for that inner push.  Skip on re-entry.
+if [ -z "$BLAMEPROMPT_NOTES_PUSH" ]; then
     REMOTE="${{1:-origin}}"
-    git push "$REMOTE" refs/notes/blameprompt 2>/dev/null || true
+    BLAMEPROMPT_NOTES_PUSH=1 git push "$REMOTE" refs/notes/blameprompt 2>/dev/null || true
 fi
 # /BlamePrompt
 "#,
@@ -147,9 +159,11 @@ fn prepare_commit_msg_hook(binary: &str) -> String {
     format!(
         r#"# BlamePrompt prepare-commit-msg hook (do not edit between markers)
 {preamble}BLAMEPROMPT="{binary}"
+# Fallback: search augmented PATH (handles stale absolute paths and GUI git clients)
+[ -x "$BLAMEPROMPT" ] || BLAMEPROMPT="$(command -v blameprompt 2>/dev/null || echo '')"
 # Annotate the commit editor with how many AI receipts will be attached.
 # $1 = commit message file, $2 = commit source (empty / template / merge / squash / commit)
-if [ -x "$BLAMEPROMPT" ]; then
+if [ -n "$BLAMEPROMPT" ] && [ -x "$BLAMEPROMPT" ]; then
     COUNT=$("$BLAMEPROMPT" staging-count 2>/dev/null || echo "0")
     if [ "$COUNT" != "0" ]; then
         MSG_SOURCE="${{2:-}}"
@@ -206,15 +220,21 @@ fn install_hook(hooks_dir: &Path, name: &str, content: &str) -> Result<(), Strin
             .map_err(|e| format!("Cannot read {}: {}", name, e))?;
 
         if existing.contains("BlamePrompt") {
-            return Ok(());
+            // Replace the existing BlamePrompt section with the current content so
+            // updates (e.g. PATH fallback, recursion guard) are applied on re-install.
+            let without_old =
+                remove_between_markers(&existing, "# BlamePrompt", "# /BlamePrompt");
+            let updated = format!("{}\n\n{}", without_old.trim_end(), content);
+            std::fs::write(&hook_path, updated)
+                .map_err(|e| format!("Cannot write {}: {}", name, e))?;
+        } else {
+            // Append to existing non-BlamePrompt hook
+            let mut new_content = existing;
+            new_content.push_str("\n\n");
+            new_content.push_str(content);
+            std::fs::write(&hook_path, new_content)
+                .map_err(|e| format!("Cannot write {}: {}", name, e))?;
         }
-
-        // Append to existing hook
-        let mut new_content = existing;
-        new_content.push_str("\n\n");
-        new_content.push_str(content);
-        std::fs::write(&hook_path, new_content)
-            .map_err(|e| format!("Cannot write {}: {}", name, e))?;
     } else {
         // Create new hook
         let full = format!("#!/bin/sh\n\n{}", content);

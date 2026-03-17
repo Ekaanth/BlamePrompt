@@ -213,7 +213,8 @@ pub fn install_git_template() -> Result<(), String> {
     std::fs::create_dir_all(&hooks_dir)
         .map_err(|e| format!("Cannot create template dir: {}", e))?;
 
-    // Write all hook templates with the absolute binary path embedded
+    // Write all hook templates with the absolute binary path embedded.
+    // Always overwrite so updates (PATH fallback, recursion guards, etc.) are applied.
     let binary = hooks::resolve_binary_path();
     for (name, content) in hooks::all_hook_entries(&binary) {
         let hook_path = hooks_dir.join(name);
