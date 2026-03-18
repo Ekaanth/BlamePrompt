@@ -44,15 +44,56 @@ struct HookInput {
     tool_input: Option<serde_json::Value>,
 }
 
+/// Helper: try snake_case key first, then camelCase fallback.
+/// VS Code extension may send camelCase property names in tool_input.
+fn get_str<'a>(v: &'a serde_json::Value, snake: &str, camel: &str) -> Option<&'a str> {
+    v.get(snake)
+        .or_else(|| v.get(camel))
+        .and_then(|v| v.as_str())
+}
+
+/// Extract prompt text from hook payload.
+/// Handles both string (`"prompt": "text"`) and array format
+/// (`"prompt": [{"type":"text","text":"..."},...]`).
+fn extract_prompt(v: &serde_json::Value) -> Option<String> {
+    match v.get("prompt") {
+        Some(serde_json::Value::String(s)) => Some(s.clone()),
+        Some(serde_json::Value::Array(arr)) => {
+            // Claude Code may send prompt as an array of content blocks.
+            // Extract text from {type: "text", text: "..."} entries.
+            let texts: Vec<&str> = arr
+                .iter()
+                .filter_map(|item| {
+                    if item.get("type").and_then(|t| t.as_str()) == Some("text") {
+                        item.get("text").and_then(|t| t.as_str())
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            if texts.is_empty() {
+                None
+            } else {
+                Some(texts.join("\n"))
+            }
+        }
+        _ => None,
+    }
+}
+
 fn parse_hook_input(json_str: &str) -> HookInput {
     let v: serde_json::Value = serde_json::from_str(json_str).unwrap_or(serde_json::Value::Null);
-    let tool_input = v.get("tool_input");
+    let tool_input = v.get("tool_input").or_else(|| v.get("toolInput"));
 
     // Collect all file paths from this tool invocation.
-    // Write/Edit/Read: top-level file_path field.
+    // Write/Edit/Read: top-level file_path / filePath field.
     // MultiEdit: edits[].file_path array.
     let file_paths = if let Some(fp) = tool_input
-        .and_then(|ti| ti.get("file_path").or_else(|| ti.get("path")))
+        .and_then(|ti| {
+            ti.get("file_path")
+                .or_else(|| ti.get("filePath"))
+                .or_else(|| ti.get("path"))
+        })
         .and_then(|v| v.as_str())
     {
         vec![fp.to_string()]
@@ -64,6 +105,7 @@ fn parse_hook_input(json_str: &str) -> HookInput {
             .iter()
             .filter_map(|edit| {
                 edit.get("file_path")
+                    .or_else(|| edit.get("filePath"))
                     .or_else(|| edit.get("path"))
                     .and_then(|v| v.as_str())
                     .map(String::from)
@@ -73,45 +115,44 @@ fn parse_hook_input(json_str: &str) -> HookInput {
         vec![]
     };
 
+    // Normalize tool_name: map VS Code / alternate names to canonical names.
+    let raw_tool_name = get_str(&v, "tool_name", "toolName").map(String::from);
+    let tool_name = raw_tool_name.map(|name| normalize_tool_name(&name));
+
     HookInput {
-        session_id: v
-            .get("session_id")
-            .and_then(|v| v.as_str())
+        session_id: get_str(&v, "session_id", "sessionId").map(String::from),
+        parent_session_id: get_str(&v, "parent_session_id", "parentSessionId").map(String::from),
+        agent_id: get_str(&v, "agent_id", "agentId").map(String::from),
+        agent_type: get_str(&v, "agent_type", "agentType").map(String::from),
+        agent_transcript_path: get_str(&v, "agent_transcript_path", "agentTranscriptPath")
             .map(String::from),
-        parent_session_id: v
-            .get("parent_session_id")
-            .and_then(|v| v.as_str())
-            .map(String::from),
-        agent_id: v.get("agent_id").and_then(|v| v.as_str()).map(String::from),
-        agent_type: v
-            .get("agent_type")
-            .and_then(|v| v.as_str())
-            .map(String::from),
-        agent_transcript_path: v
-            .get("agent_transcript_path")
-            .and_then(|v| v.as_str())
-            .map(String::from),
-        transcript_path: v
-            .get("transcript_path")
-            .and_then(|v| v.as_str())
-            .map(String::from),
+        transcript_path: get_str(&v, "transcript_path", "transcriptPath").map(String::from),
         cwd: v.get("cwd").and_then(|v| v.as_str()).map(String::from),
-        hook_event_name: v
-            .get("hook_event_name")
-            .and_then(|v| v.as_str())
-            .map(String::from),
-        tool_name: v
-            .get("tool_name")
-            .and_then(|v| v.as_str())
-            .map(String::from),
-        prompt: v.get("prompt").and_then(|v| v.as_str()).map(String::from),
+        hook_event_name: get_str(&v, "hook_event_name", "hookEventName").map(String::from),
+        tool_name,
+        prompt: extract_prompt(&v),
         file_paths,
-        last_assistant_message: v
-            .get("last_assistant_message")
-            .and_then(|v| v.as_str())
+        last_assistant_message: get_str(&v, "last_assistant_message", "lastAssistantMessage")
             .map(String::from),
-        tool_response: v.get("tool_response").cloned(),
+        tool_response: v
+            .get("tool_response")
+            .or_else(|| v.get("toolResponse"))
+            .cloned(),
         tool_input: tool_input.cloned(),
+    }
+}
+
+/// Map alternate tool names (VS Code, other IDEs) to the canonical names used in the matcher.
+fn normalize_tool_name(name: &str) -> String {
+    match name {
+        // Potential VS Code / IDE alternate names
+        "create_file" | "createFile" => "Write".to_string(),
+        "edit_file" | "editFile" => "Edit".to_string(),
+        "multi_edit" | "multiEdit" => "MultiEdit".to_string(),
+        "run_command" | "runCommand" | "execute" => "Bash".to_string(),
+        "read_file" | "readFile" => "Read".to_string(),
+        "ask_user" | "askUser" => "AskUserQuestion".to_string(),
+        _ => name.to_string(),
     }
 }
 
@@ -1474,5 +1515,40 @@ mod tests {
             input.last_assistant_message.as_deref(),
             Some("I fixed the bug by updating the parser to handle edge cases.")
         );
+    }
+
+    #[test]
+    fn test_parse_hook_input_camel_case_properties() {
+        // VS Code extension may send camelCase property names
+        let json = r#"{"sessionId":"vs-123","hookEventName":"PostToolUse","toolName":"Write","transcriptPath":"/tmp/t.jsonl","toolInput":{"filePath":"src/app.rs"},"lastAssistantMessage":"Done."}"#;
+        let input = parse_hook_input(json);
+        assert_eq!(input.session_id.as_deref(), Some("vs-123"));
+        assert_eq!(input.hook_event_name.as_deref(), Some("PostToolUse"));
+        assert_eq!(input.tool_name.as_deref(), Some("Write"));
+        assert_eq!(input.transcript_path.as_deref(), Some("/tmp/t.jsonl"));
+        assert_eq!(input.file_paths, vec!["src/app.rs"]);
+        assert_eq!(input.last_assistant_message.as_deref(), Some("Done."));
+    }
+
+    #[test]
+    fn test_parse_hook_input_prompt_array_format() {
+        // Claude Code may send prompt as array of content blocks
+        let json = r#"{"hook_event_name":"UserPromptSubmit","prompt":[{"type":"text","text":"fix the bug"},{"type":"tool_result","content":"success"}]}"#;
+        let input = parse_hook_input(json);
+        assert_eq!(input.prompt.as_deref(), Some("fix the bug"));
+    }
+
+    #[test]
+    fn test_normalize_tool_name_aliases() {
+        assert_eq!(normalize_tool_name("Write"), "Write");
+        assert_eq!(normalize_tool_name("create_file"), "Write");
+        assert_eq!(normalize_tool_name("createFile"), "Write");
+        assert_eq!(normalize_tool_name("edit_file"), "Edit");
+        assert_eq!(normalize_tool_name("editFile"), "Edit");
+        assert_eq!(normalize_tool_name("multi_edit"), "MultiEdit");
+        assert_eq!(normalize_tool_name("run_command"), "Bash");
+        assert_eq!(normalize_tool_name("Bash"), "Bash");
+        assert_eq!(normalize_tool_name("Read"), "Read");
+        assert_eq!(normalize_tool_name("SomeUnknownTool"), "SomeUnknownTool");
     }
 }

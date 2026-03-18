@@ -102,12 +102,18 @@ pub fn run(token: Option<&str>, api_url: Option<&str>) {
         Ok(r) if r.status().is_success() => match r.json() {
             Ok(v) => v,
             Err(e) => {
-                eprintln!("  \x1b[1;31mError:\x1b[0m Failed to parse device flow response: {}", e);
+                eprintln!(
+                    "  \x1b[1;31mError:\x1b[0m Failed to parse device flow response: {}",
+                    e
+                );
                 std::process::exit(1);
             }
         },
         Ok(r) => {
-            eprintln!("  \x1b[1;31mError:\x1b[0m Device flow initiation failed (HTTP {})", r.status());
+            eprintln!(
+                "  \x1b[1;31mError:\x1b[0m Device flow initiation failed (HTTP {})",
+                r.status()
+            );
             std::process::exit(1);
         }
         Err(e) => {
@@ -179,7 +185,10 @@ pub fn run(token: Option<&str>, api_url: Option<&str>) {
                 }
             }
             Ok(r) => {
-                eprintln!("  \x1b[1;31mError:\x1b[0m Poll failed (HTTP {})", r.status());
+                eprintln!(
+                    "  \x1b[1;31mError:\x1b[0m Poll failed (HTTP {})",
+                    r.status()
+                );
                 std::process::exit(1);
             }
             Err(e) => {

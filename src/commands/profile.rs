@@ -58,10 +58,7 @@ pub fn run(edit: bool) {
 
     let none_str = "\x1b[2m(not set)\x1b[0m";
 
-    println!(
-        "  \x1b[1mUsername:\x1b[0m       @{}",
-        profile.username
-    );
+    println!("  \x1b[1mUsername:\x1b[0m       @{}", profile.username);
     println!(
         "  \x1b[1mDisplay Name:\x1b[0m  {}",
         profile.display_name.as_deref().unwrap_or(none_str)

@@ -50,14 +50,10 @@ if [ $_EXIT -eq 0 ]; then
             # Auto-attach staged AI receipts to the new commit
             "$BLAMEPROMPT" attach 2>/dev/null || true
             ;;
-        push)
-            # Auto-push AI notes to the same remote.
-            # Guard: skip if this IS the notes push (prevents pre-push hook recursion).
-            # Run in the background (&) so the user is not blocked by the notes push.
-            if [ -z "$BLAMEPROMPT_NOTES_PUSH" ]; then
-                _REMOTE="${{2:-origin}}"
-                (BLAMEPROMPT_NOTES_PUSH=1 "$REAL_GIT" push "$_REMOTE" refs/notes/blameprompt 2>/dev/null || true) &
-            fi
+push)
+            # Notes are pushed by the pre-push git hook (installed by blameprompt init).
+            # Do NOT push notes here — the hook already fires during $REAL_GIT push above,
+            # and duplicating the push doubles network time and can exhaust process limits.
             ;;
     esac
 fi
@@ -220,9 +216,11 @@ mod tests {
             "should skip own bin dir"
         );
         assert!(content.contains("attach"), "should run attach after commit");
+        // Notes push is handled by the pre-push git hook, not the shim.
+        // The shim should NOT contain its own notes push logic.
         assert!(
-            content.contains("refs/notes/blameprompt"),
-            "should push notes after push"
+            !content.contains("refs/notes/blameprompt"),
+            "shim should NOT push notes (pre-push hook handles it)"
         );
         assert!(
             content.contains("/usr/local/bin/blameprompt"),

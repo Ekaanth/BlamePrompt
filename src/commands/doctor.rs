@@ -47,9 +47,7 @@ fn check_inside_git_repo() -> CheckResult {
         .args(["rev-parse", "--git-dir"])
         .output()
     {
-        Ok(output) if output.status.success() => {
-            CheckResult::pass("Inside git repository")
-        }
+        Ok(output) if output.status.success() => CheckResult::pass("Inside git repository"),
         _ => CheckResult::fail("Not inside a git repository"),
     }
 }
@@ -88,7 +86,9 @@ fn check_git_hooks_installed() -> CheckResult {
         .and_then(|o| String::from_utf8(o.stdout).ok())
         .map(|s| {
             let git_dir = s.trim().to_string();
-            let hook_path = std::path::Path::new(&git_dir).join("hooks").join("post-commit");
+            let hook_path = std::path::Path::new(&git_dir)
+                .join("hooks")
+                .join("post-commit");
             if hook_path.exists() {
                 std::fs::read_to_string(&hook_path)
                     .map(|c| c.contains("blameprompt"))
@@ -155,9 +155,7 @@ fn check_claude_hooks() -> CheckResult {
         Ok(content) if content.contains("blameprompt") => {
             CheckResult::pass("Claude Code hooks configured")
         }
-        Ok(_) => CheckResult::fail(
-            "Claude Code hooks not configured (run: blameprompt init)",
-        ),
+        Ok(_) => CheckResult::fail("Claude Code hooks not configured (run: blameprompt init)"),
         Err(_) => CheckResult::fail("Claude Code hooks not configured (cannot read settings)"),
     }
 }
@@ -178,7 +176,10 @@ fn check_sqlite_cache() -> CheckResult {
             let count: i64 = conn
                 .query_row("SELECT COUNT(*) FROM receipts", [], |row| row.get(0))
                 .unwrap_or(0);
-            CheckResult::pass(format!("SQLite cache exists ({} receipts)", format_number(count)))
+            CheckResult::pass(format!(
+                "SQLite cache exists ({} receipts)",
+                format_number(count)
+            ))
         }
         Err(_) => CheckResult::pass("SQLite cache exists (cannot read count)"),
     }
@@ -189,7 +190,7 @@ fn format_number(n: i64) -> String {
     let bytes = s.as_bytes();
     let mut result = String::new();
     for (i, &b) in bytes.iter().enumerate() {
-        if i > 0 && (bytes.len() - i) % 3 == 0 {
+        if i > 0 && (bytes.len() - i).is_multiple_of(3) {
             result.push(',');
         }
         result.push(b as char);
@@ -235,13 +236,9 @@ pub fn run() {
 
     println!();
     if passed == total {
-        println!(
-            "  {GREEN}{passed}/{total} checks passed{RESET} {DIM}\u{2014} all good!{RESET}"
-        );
+        println!("  {GREEN}{passed}/{total} checks passed{RESET} {DIM}\u{2014} all good!{RESET}");
     } else {
-        println!(
-            "  {CYAN}{passed}/{total} checks passed{RESET}"
-        );
+        println!("  {CYAN}{passed}/{total} checks passed{RESET}");
     }
     println!();
 }

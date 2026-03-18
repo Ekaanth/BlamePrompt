@@ -497,7 +497,10 @@ pub fn run_record_copilot(workspace: Option<&str>) {
                 turn: (i as u32) + 1,
                 role: m.role.clone(),
                 content: crate::core::redact::redact_secrets_with_config(
-                    &m.text.chars().take(cfg.capture.max_prompt_length).collect::<String>(),
+                    &m.text
+                        .chars()
+                        .take(cfg.capture.max_prompt_length)
+                        .collect::<String>(),
                     &cfg,
                 ),
                 tool_name: None,
@@ -507,12 +510,23 @@ pub fn run_record_copilot(workspace: Option<&str>) {
 
         // Estimate tokens from message content for cost calculation
         let estimated_input = crate::core::pricing::estimate_tokens_from_chars(
-            session.messages.iter().filter(|m| m.role == "user").map(|m| m.text.len()).sum(),
+            session
+                .messages
+                .iter()
+                .filter(|m| m.role == "user")
+                .map(|m| m.text.len())
+                .sum(),
         );
         let estimated_output = crate::core::pricing::estimate_tokens_from_chars(
-            session.messages.iter().filter(|m| m.role == "assistant").map(|m| m.text.len()).sum(),
+            session
+                .messages
+                .iter()
+                .filter(|m| m.role == "assistant")
+                .map(|m| m.text.len())
+                .sum(),
         );
-        let cost = crate::core::pricing::estimate_cost(&session.model, estimated_input, estimated_output);
+        let cost =
+            crate::core::pricing::estimate_cost(&session.model, estimated_input, estimated_output);
 
         // Compute session duration from message timestamps
         let session_duration_secs = {
@@ -521,7 +535,11 @@ pub fn run_record_copilot(workspace: Option<&str>) {
             match (first_ts, last_ts) {
                 (Some(f), Some(l)) => {
                     let dur = (l - f).num_seconds();
-                    if dur > 0 { Some(dur as u64) } else { None }
+                    if dur > 0 {
+                        Some(dur as u64)
+                    } else {
+                        None
+                    }
                 }
                 _ => None,
             }
@@ -566,7 +584,11 @@ pub fn run_record_copilot(workspace: Option<&str>) {
             subagent_activities: vec![],
             concurrent_tool_calls: None,
             user_decisions: vec![],
-            conversation: if conversation.is_empty() { None } else { Some(conversation) },
+            conversation: if conversation.is_empty() {
+                None
+            } else {
+                Some(conversation)
+            },
             prompt_submitted_at: Some(session.timestamp),
             prompt_duration_secs: None,
             accepted_lines: None,

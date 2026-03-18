@@ -222,8 +222,16 @@ pub fn parse_opencode_session(path: &Path) -> Option<OpenCodeSession> {
         tools_used,
         timestamp: first_ts.unwrap_or_else(Utc::now),
         end_timestamp: last_ts,
-        input_tokens: if input_tokens > 0 { Some(input_tokens) } else { None },
-        output_tokens: if output_tokens > 0 { Some(output_tokens) } else { None },
+        input_tokens: if input_tokens > 0 {
+            Some(input_tokens)
+        } else {
+            None
+        },
+        output_tokens: if output_tokens > 0 {
+            Some(output_tokens)
+        } else {
+            None
+        },
     })
 }
 
@@ -277,10 +285,20 @@ pub fn import_session(path: &Path) -> Option<Receipt> {
         (Some(it), Some(ot)) => (it, ot),
         _ => {
             let est_in = crate::core::pricing::estimate_tokens_from_chars(
-                session.messages.iter().filter(|m| m.role == "user").map(|m| m.text.len()).sum(),
+                session
+                    .messages
+                    .iter()
+                    .filter(|m| m.role == "user")
+                    .map(|m| m.text.len())
+                    .sum(),
             );
             let est_out = crate::core::pricing::estimate_tokens_from_chars(
-                session.messages.iter().filter(|m| m.role == "assistant").map(|m| m.text.len()).sum(),
+                session
+                    .messages
+                    .iter()
+                    .filter(|m| m.role == "assistant")
+                    .map(|m| m.text.len())
+                    .sum(),
             );
             (
                 session.input_tokens.unwrap_or(est_in),
@@ -292,7 +310,11 @@ pub fn import_session(path: &Path) -> Option<Receipt> {
 
     let session_duration_secs = session.end_timestamp.map(|end| {
         let dur = (end - session.timestamp).num_seconds();
-        if dur > 0 { dur as u64 } else { 0 }
+        if dur > 0 {
+            dur as u64
+        } else {
+            0
+        }
     });
 
     let conversation: Vec<crate::core::receipt::ConversationTurn> = session
@@ -303,7 +325,10 @@ pub fn import_session(path: &Path) -> Option<Receipt> {
             turn: (i as u32) + 1,
             role: m.role.clone(),
             content: crate::core::redact::redact_secrets_with_config(
-                &m.text.chars().take(cfg.capture.max_prompt_length).collect::<String>(),
+                &m.text
+                    .chars()
+                    .take(cfg.capture.max_prompt_length)
+                    .collect::<String>(),
                 &cfg,
             ),
             tool_name: None,
@@ -352,7 +377,11 @@ pub fn import_session(path: &Path) -> Option<Receipt> {
         subagent_activities: vec![],
         concurrent_tool_calls: None,
         user_decisions: vec![],
-        conversation: if conversation.is_empty() { None } else { Some(conversation) },
+        conversation: if conversation.is_empty() {
+            None
+        } else {
+            Some(conversation)
+        },
         prompt_submitted_at: Some(session.timestamp),
         prompt_duration_secs: None,
         accepted_lines: None,

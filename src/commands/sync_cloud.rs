@@ -23,14 +23,12 @@ fn sync_state_path() -> PathBuf {
 fn save_sync_state(ts: &DateTime<Utc>) -> Result<(), String> {
     let path = sync_state_path();
     if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| format!("Failed to create dir: {}", e))?;
+        std::fs::create_dir_all(parent).map_err(|e| format!("Failed to create dir: {}", e))?;
     }
     let state = SyncState {
         last_sync: Some(ts.to_rfc3339()),
     };
-    let content =
-        toml::to_string_pretty(&state).map_err(|e| format!("Serialize error: {}", e))?;
+    let content = toml::to_string_pretty(&state).map_err(|e| format!("Serialize error: {}", e))?;
     std::fs::write(&path, content).map_err(|e| format!("Failed to write sync state: {}", e))?;
     Ok(())
 }
@@ -44,13 +42,7 @@ fn get_project_name() -> Option<String> {
         .ok()
         .filter(|o| o.status.success())
         .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| {
-            s.trim()
-                .rsplit('/')
-                .next()
-                .unwrap_or("unknown")
-                .to_string()
-        })
+        .map(|s| s.trim().rsplit('/').next().unwrap_or("unknown").to_string())
 }
 
 // ── API payload types ───────────────────────────────────────────────────────
@@ -190,7 +182,10 @@ pub fn run(quiet: bool) {
 
         day.session_ids.insert(r.session_id.clone());
         if let Some(dur) = r.session_duration_secs {
-            let entry = day.session_durations.entry(r.session_id.clone()).or_insert(0);
+            let entry = day
+                .session_durations
+                .entry(r.session_id.clone())
+                .or_insert(0);
             if dur > *entry {
                 *entry = dur;
             }
@@ -198,7 +193,10 @@ pub fn run(quiet: bool) {
 
         // Language detection from file extensions
         for fc in r.all_file_changes() {
-            if let Some(ext) = std::path::Path::new(&fc.path).extension().and_then(|e| e.to_str()) {
+            if let Some(ext) = std::path::Path::new(&fc.path)
+                .extension()
+                .and_then(|e| e.to_str())
+            {
                 let ext_lower = ext.to_lowercase();
                 let lang = match ext_lower.as_str() {
                     "rs" => "Rust",
@@ -263,8 +261,7 @@ pub fn run(quiet: bool) {
                 let avg_quality_score = if b.quality_scores.is_empty() {
                     0.0
                 } else {
-                    b.quality_scores.iter().sum::<u32>() as f64
-                        / b.quality_scores.len() as f64
+                    b.quality_scores.iter().sum::<u32>() as f64 / b.quality_scores.len() as f64
                 };
                 let total_session_duration_secs: u64 = b.session_durations.values().sum();
                 DailyActivity {
@@ -305,7 +302,10 @@ pub fn run(quiet: bool) {
         Ok(_) => {
             let now = Utc::now();
             if let Err(e) = save_sync_state(&now) {
-                eprintln!("  \x1b[1;33mWarning:\x1b[0m Could not save sync state: {}", e);
+                eprintln!(
+                    "  \x1b[1;33mWarning:\x1b[0m Could not save sync state: {}",
+                    e
+                );
             }
 
             if !quiet {

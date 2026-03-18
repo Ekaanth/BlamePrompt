@@ -335,7 +335,6 @@ fn write_staging_data(data: &StagingData, path: &Path, tmp_path: &Path) {
             eprintln!("[blameprompt] Failed to serialize staging data: {}", e);
         }
     }
-
 }
 
 /// Write staging data to a specific base directory.
@@ -811,7 +810,11 @@ mod tests {
         let merged = read_all_staging_in(root);
         assert_eq!(merged.receipts.len(), 4);
 
-        let summaries: Vec<&str> = merged.receipts.iter().map(|r| r.prompt_summary.as_str()).collect();
+        let summaries: Vec<&str> = merged
+            .receipts
+            .iter()
+            .map(|r| r.prompt_summary.as_str())
+            .collect();
         assert!(summaries.contains(&"root prompt"));
         assert!(summaries.contains(&"frontend prompt"));
         assert!(summaries.contains(&"backend prompt 1"));

@@ -147,7 +147,11 @@ fn pre_push_hook(binary: &str) -> String {
 # Run in the background (&) so the main push is not blocked by the notes push.
 if [ -z "$BLAMEPROMPT_NOTES_PUSH" ]; then
     REMOTE="${{1:-origin}}"
-    (BLAMEPROMPT_NOTES_PUSH=1 git push "$REMOTE" refs/notes/blameprompt 2>/dev/null || true) &
+    # Use the real git binary to avoid going through the blameprompt shim (if installed).
+    _BP_REAL_GIT=$(PATH=$(printf '%s' "$PATH" | tr ':' '\n' | grep -v '.blameprompt/bin' | tr '\n' ':' | sed 's/:$//') which git 2>/dev/null || echo git)
+    # Redirect ALL fds (stdin/stdout/stderr) so git does not wait for the
+    # backgrounded process's inherited pipes to close before completing the push.
+    (BLAMEPROMPT_NOTES_PUSH=1 "$_BP_REAL_GIT" push "$REMOTE" refs/notes/blameprompt </dev/null >/dev/null 2>&1 || true) &
 fi
 # /BlamePrompt
 "#,
@@ -223,8 +227,7 @@ fn install_hook(hooks_dir: &Path, name: &str, content: &str) -> Result<(), Strin
         if existing.contains("BlamePrompt") {
             // Replace the existing BlamePrompt section with the current content so
             // updates (e.g. PATH fallback, recursion guard) are applied on re-install.
-            let without_old =
-                remove_between_markers(&existing, "# BlamePrompt", "# /BlamePrompt");
+            let without_old = remove_between_markers(&existing, "# BlamePrompt", "# /BlamePrompt");
             let updated = format!("{}\n\n{}", without_old.trim_end(), content);
             std::fs::write(&hook_path, updated)
                 .map_err(|e| format!("Cannot write {}: {}", name, e))?;

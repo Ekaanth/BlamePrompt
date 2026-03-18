@@ -119,7 +119,10 @@ enum Commands {
     },
 
     /// Alias for analytics
-    #[command(name = "stats", about = "Show aggregated AI usage statistics (alias for analytics)")]
+    #[command(
+        name = "stats",
+        about = "Show aggregated AI usage statistics (alias for analytics)"
+    )]
     Stats {
         /// Export format: json, csv
         #[arg(long)]
@@ -500,7 +503,7 @@ fn compute_ai_percentage(receipts: &[core::receipt::Receipt]) -> f64 {
                 .lines()
                 .filter_map(|line| {
                     let parts: Vec<&str> = line.split('\t').collect();
-                    if parts.len() >= 1 {
+                    if !parts.is_empty() {
                         parts[0].parse::<u32>().ok()
                     } else {
                         None
@@ -519,7 +522,11 @@ fn compute_ai_percentage(receipts: &[core::receipt::Receipt]) -> f64 {
     } else {
         let pct = (ai_additions as f64 / total_commit_additions as f64) * 100.0;
         // Cap at 100%
-        if pct > 100.0 { 100.0 } else { pct }
+        if pct > 100.0 {
+            100.0
+        } else {
+            pct
+        }
     }
 }
 
