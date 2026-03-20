@@ -133,10 +133,10 @@ fn calculate_risk_factors(entries: &[audit::AuditEntry]) -> Vec<RiskFactor> {
     let mut single_receipt_commits = 0;
     let mut multi_receipt_commits = 0;
     for entry in entries {
-        if entry.receipts.len() == 1 {
-            single_receipt_commits += 1;
-        } else if entry.receipts.len() > 1 {
-            multi_receipt_commits += 1;
+        match entry.receipts.len().cmp(&1) {
+            std::cmp::Ordering::Equal => single_receipt_commits += 1,
+            std::cmp::Ordering::Greater => multi_receipt_commits += 1,
+            std::cmp::Ordering::Less => {}
         }
     }
     let total_commits = single_receipt_commits + multi_receipt_commits;

@@ -24,77 +24,34 @@ $ blameprompt blame src/auth.rs
 Code Origin: 45.5% AI-generated, 54.5% human
 ```
 
-## Supported agents
-
-All detected agents are auto-configured when you run `blameprompt init --global`. If an agent isn't installed, it's silently skipped.
-
-| Agent | Hook config | Import historical sessions |
-|-------|------------|---------------------------|
-| **Claude Code** | `~/.claude/settings.json` (10+ lifecycle events) | Automatic |
-| **GitHub Copilot** | `~/.github/hooks/blameprompt.json` | `blameprompt record-copilot` |
-| **OpenAI Codex CLI** | `~/.codex/config.toml` | `blameprompt record-codex` |
-| **Google Gemini CLI** | `~/.gemini/settings.json` | `blameprompt record-gemini` |
-| **Cursor** | `~/.cursor/hooks.json` | `blameprompt record-cursor` |
-| **Windsurf (Codeium)** | `~/.windsurf/hooks.json` | `blameprompt record-windsurf` |
-| **Antigravity IDE** | `~/.antigravity/settings.json` | `blameprompt record-antigravity` |
-| **Any provider** | — | `blameprompt record --session <file> --provider <name>` |
-
-The `record-*` commands are only needed to import **historical sessions** from before blameprompt was installed. Once hooks are active, all new AI activity is tracked automatically.
-
-## VS Code extension
-
-Install from [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Blameprompt.blameprompt).
-
-The companion VS Code extension provides a rich sidebar with three views:
-
-**Prompt Receipts** — tree view structured as:
-```
-commit (subject · author · sha · time ago)
-  └─ "Add JWT validation..." (sonnet-4-5 · 3 files · $0.03 · 2m ago)
-       ├─ src/auth.rs:4-8           (5L)      <- click to open file
-       ├─ src/middleware.rs:15-30   (16L)
-       ├─ Write                     tool      <- tools used
-       ├─ Edit                      tool
-       ├─ github                    MCP server <- MCP servers called
-       └─ "Run tests (Bash)"       sub-agent  <- agents spawned
-```
-
-**Prompt History** — git-log-style visual timeline with:
-- Commit rows showing author, SHA, prompt count, cost
-- Collapsible file lists per prompt
-- Model-colored labels (Claude=orange, OpenAI=green, Google=blue)
-- Tool/MCP/agent chips on each prompt
-- Real-time filter search
-
-**File History** — shows all prompts that modified the currently open file, auto-updates as you switch tabs.
-
-Click any prompt to open a detailed receipt view with the full chain of thought (conversation turns, tool calls, files touched).
-
-## Enterprise
-
-BlamePrompt Enterprise provides organizational-level AI code observability:
-
-- Aggregate AI code composition metrics across teams and repositories
-- Full lifecycle tracking from initial generation through production deployment
-- Agent and model effectiveness comparison
-- Secure prompt storage with redaction and PII filtering
-- Cross-repository dashboards and analytics
-- Self-hosted or cloud deployment
-
-To learn more or book a demo, visit [blameprompt.com](https://blameprompt.com).
-
 ## Install
 
 ```bash
+# macOS / Linux
+curl -sSL https://blameprompt.com/install.sh | bash
+
+# Windows (PowerShell)
+irm https://blameprompt.com/install.ps1 | iex
+
+# Or build from source
 cargo install --path .
 ```
 
-First run auto-configures everything globally — Claude Code hooks, Git template, the works. Every `git init` and `git clone` after that is tracked automatically.
+The installer automatically runs `blameprompt init --global` — setting up Claude Code hooks, Git template, and all detected agent hooks in one step. Every `git init` and `git clone` after that is tracked automatically.
+
+## Quick start
+
+After installing, log in to connect your dashboard:
 
 ```bash
-blameprompt init --global    # explicit global setup
-blameprompt init             # setup in current repo only
+# Log in via GitHub
+blameprompt login
+
+# Open your dashboard
+blameprompt dash
 ```
+
+Or sign in directly at [blameprompt.com/sign-in](https://blameprompt.com/sign-in) to connect your GitHub account and access your dashboard.
 
 ## How it works
 
@@ -106,81 +63,61 @@ AI Agent ──> hooks/import ──> staging.json ──> git commit ──> Gi
                cost, tokens)
 ```
 
-1. **You code with AI** — hooks fire in real time (Claude Code) or you import sessions from other agents
-2. **One receipt per prompt** — all files changed are grouped into a single receipt with the prompt that triggered them
-3. **Receipts attach on commit** — `post-commit` hook writes everything as a Git Note on the commit
+1. **You code with AI** — hooks fire in real time or you import sessions from other agents
+2. **One receipt per prompt** — all files changed are grouped with the prompt that triggered them
+3. **Receipts attach on commit** — `post-commit` hook writes everything as a Git Note
 4. **Query anytime** — `blame`, `show`, `search`, `audit`, `analytics`, `report`, `diff`
 
 Receipts survive rebases, merges, and cherry-picks via the `post-rewrite` hook.
 
-## What gets captured
+## Supported agents
 
-Every AI receipt includes:
+All detected agents are auto-configured by `blameprompt init --global`. If an agent isn't installed, it's silently skipped.
 
-| Field | Example |
-|-------|---------|
-| **Provider** | `claude`, `copilot`, `codex`, `gemini`, `cursor`, `windsurf`, `antigravity` |
-| **Model** | `claude-opus-4-6`, `gpt-4o`, `gemini-2.5-pro`, `codex-mini` |
-| **User** | `Jane Doe <jane@example.com>` |
-| **Timestamp** | `2026-02-24T14:32:00Z` |
-| **Session ID** | `a1b2c3d4-e5f6-7890-abcd-ef1234567890` |
-| **Prompt duration** | `45s` (wall-clock time for this prompt) |
-| **Session duration** | `12m 34s` (total session time) |
-| **Files changed** | `src/auth.rs` (L4-8, +5-0), `src/middleware.rs` (L15-30, +16-2) |
-| **Prompt summary** | `"Add JWT claims struct with sub and exp fields"` |
-| **Response summary** | `"Added Claims struct with sub/exp fields and JWT validation"` |
-| **Prompt hash** | `sha256:9f86d08...` |
-| **Token usage** | input: 12,450 / output: 3,200 / cache_read: 8,100 / cache_creation: 1,500 |
-| **Cost** | `$0.0342` (real token-based, not estimated) |
-| **Tools used** | `Bash`, `Write`, `Edit`, `Grep` |
-| **MCP servers** | `filesystem`, `github` |
-| **Agents spawned** | `"Explore codebase (Explore)"`, `"Run tests (Bash)"` |
-| **Chain of thought** | Full conversation turns (user, AI, tool calls) |
-| **Prompt quality** | `82/100 (excellent)` — clarity 85%, actionability 78%, context 80%, efficiency 84% |
-| **Prompt category** | `code_generation`, `bug_fix`, `refactor`, `question`, `command`, `clarification`, `file_operation`, `continuation` |
-| **Acceptance rate** | `92% (46 accepted, 4 overridden)` |
-| **Parent receipt** | Links to previous receipt in the session chain |
+| Agent | Hook config | Import historical sessions |
+|-------|------------|---------------------------|
+| **Claude Code** | `~/.claude/settings.json` | Automatic |
+| **GitHub Copilot** | `~/.github/hooks/blameprompt.json` | `blameprompt record-copilot` |
+| **OpenAI Codex CLI** | `~/.codex/config.toml` | `blameprompt record-codex` |
+| **Google Gemini CLI** | `~/.gemini/settings.json` | `blameprompt record-gemini` |
+| **Cursor** | `~/.cursor/hooks.json` | `blameprompt record-cursor` |
+| **Windsurf (Codeium)** | `~/.windsurf/hooks.json` | `blameprompt record-windsurf` |
+| **Antigravity IDE** | `~/.antigravity/settings.json` | `blameprompt record-antigravity` |
+| **Continue** | `~/.continue/hooks.json` | `blameprompt record-continue` |
+| **Droid** | `~/.droid/hooks.json` | `blameprompt record-droid` |
+| **JetBrains Junie** | `~/.junie/hooks.json` | `blameprompt record-junie` |
+| **Atlassian Rovo Dev** | `~/.rovo-dev/hooks.json` | `blameprompt record-rovo-dev` |
+| **Sourcegraph Amp** | `~/.amp/hooks.json` | `blameprompt record-amp` |
+| **OpenCode** | `~/.opencode/hooks.json` | `blameprompt record-opencode` |
+| **Any provider** | — | `blameprompt record --session <file> --provider <name>` |
 
-### Real token-based cost tracking
+The `record-*` commands import **historical sessions** from before blameprompt was installed. Once hooks are active, all new AI activity is tracked automatically.
 
-BlamePrompt parses actual API token usage data (input, output, cache reads, cache creation) from session transcripts. Cache reads are priced at 90% discount, cache creation at 25% surcharge. No more guessing based on character counts.
+## VS Code extension
 
-Pricing supported for: Claude (Opus, Sonnet, Haiku), GPT-4o/4.1/o1/o3, Gemini 2.5 Pro/Flash, Codex, and more.
+Install from [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Blameprompt.blameprompt).
 
-### Prompt-centric model
+The companion extension provides three sidebar views:
 
-One prompt = one receipt = all files changed. This matches how AI coding actually works — a single prompt often touches multiple files across a codebase.
+- **Prompt Receipts** — tree view of commits > prompts > files/tools/agents
+- **Prompt History** — git-log-style timeline with model-colored labels and filter search
+- **File History** — all prompts that modified the currently open file, auto-updates on tab switch
 
-```json
-{
-  "prompt_summary": "Add JWT validation middleware",
-  "response_summary": "Added Claims struct, JWT middleware, and tests",
-  "files_changed": [
-    { "path": "src/auth.rs", "line_range": [4, 8], "additions": 5, "deletions": 0 },
-    { "path": "src/middleware.rs", "line_range": [15, 30], "additions": 16, "deletions": 2 },
-    { "path": "tests/auth_test.rs", "line_range": [1, 45], "additions": 45, "deletions": 0 }
-  ],
-  "tools_used": ["Write", "Edit", "Bash"],
-  "agents_spawned": ["Run tests (Bash)"],
-  "cost_usd": 0.0342,
-  "input_tokens": 12450,
-  "output_tokens": 3200
-}
-```
-
-### Time tracking with parallel agent merging
-
-When Claude Code spawns sub-agents (Task tool), they run in parallel with different session IDs. BlamePrompt merges overlapping time intervals so parallel work isn't double-counted:
-
-```
-Main agent:  |████████████████████|  10:00 - 10:10  (600s)
-Sub-agent A:     |████████|           10:02 - 10:06  (240s)
-Sub-agent B:        |██████████|      10:04 - 10:08  (240s)
-                                      ────────────────────
-Wall-clock (merged):                  600s (not 1080s)
-```
+Click any prompt to open a detailed receipt view with conversation turns, tool calls, and files touched.
 
 ## Commands
+
+### Account
+
+```bash
+blameprompt login                   # authenticate via GitHub (opens browser)
+blameprompt login --token <key>     # authenticate with API token (CI/headless)
+blameprompt logout                  # clear stored credentials
+blameprompt dash                    # open dashboard in browser
+blameprompt profile                 # show your profile
+blameprompt profile --edit          # edit profile in browser
+blameprompt sync                    # upload aggregated metrics to BlamePrompt Cloud
+```
 
 ### Attribution
 
@@ -200,67 +137,27 @@ blameprompt check-provenance src/auth.rs --line 5 # specific line
 blameprompt audit                           # full audit trail (md, table, json, csv)
 blameprompt audit --from 2026-01-01 --author "Jane" --format json
 blameprompt analytics                       # aggregated stats + cost breakdown
-blameprompt report --output report.md       # comprehensive 11-section markdown report
-```
-
-The report includes: executive summary, AI vs human attribution, cost analysis, user contributions, time analysis (with merged wall-clock time), security audit, model comparison (open-source vs closed), file heatmap, session deep dive, prompt details, and recommendations.
-
-### Import from other agents
-
-```bash
-blameprompt record-copilot                  # import GitHub Copilot Chat sessions
-blameprompt record-codex                    # import OpenAI Codex CLI transcripts
-blameprompt record-gemini                   # import Google Gemini CLI sessions
-blameprompt record-cursor                   # import Cursor IDE sessions
-blameprompt record-windsurf                 # import Windsurf/Codeium sessions
-blameprompt record-antigravity              # import Antigravity IDE sessions
-blameprompt record --session <file>         # import any JSONL transcript
-blameprompt record --session <file> --provider openai
-```
-
-Each import command auto-discovers session data from default locations, or accepts explicit paths:
-
-```bash
-blameprompt record-copilot --workspace ~/path/to/state.vscdb
-blameprompt record-codex --session ~/.codex/sessions/
-blameprompt record-gemini --session ~/session.jsonl
-blameprompt record-windsurf --workspace ~/path/to/state.vscdb
+blameprompt report --output report.md       # comprehensive markdown report
 ```
 
 ### Security
 
 ```bash
-blameprompt vuln-scan               # 10 CWE patterns on AI-generated code
+blameprompt vuln-scan               # CWE pattern scanning on AI-generated code
 blameprompt prompt-injection        # detect backdoors and hidden instructions
 blameprompt secret-rotation         # flag secrets exposed to AI
 blameprompt supply-chain-risk       # risk score 0-10
 blameprompt license-scan            # model license compliance
 ```
 
-### Hackathon fairness verification
-
-Generate a report proving code was built during the hackathon — not pre-written and pasted in.
+### Hackathon fairness
 
 ```bash
 blameprompt hackathon-report                    # last 24h, all participants
 blameprompt hackathon-report --start "2026-02-26T09:00:00Z" --end "2026-02-26T21:00:00Z"
-blameprompt hackathon-report --author "John" --include-uncommitted
 ```
 
-The report includes:
-
-1. **Summary** — integrity score (0-100: PASS/REVIEW/FAIL), prompt count, AI lines, cost
-2. **Timeline** — every prompt chronologically with timestamp, duration, model, files touched
-3. **Code attribution** — AI vs human % overall and per-file
-4. **Anomaly detection** — 7 detectors flag suspicious patterns:
-   - Prompts outside the hackathon time window
-   - Pre-written code (file appears fully-formed with no iteration)
-   - Source files with no receipt trail (manual paste-ins)
-   - Duplicate prompt hashes (rehearsed prompts)
-   - Batch commits with low receipt coverage
-   - Unusually fast output (short session, many lines)
-   - Long activity gaps during the hackathon
-5. **Integrity assessment** — weighted score breakdown with conclusion
+Generates an integrity report with timeline, code attribution, and anomaly detection (pre-written code, rehearsed prompts, activity gaps, etc.).
 
 ### Sharing & interop
 
@@ -273,73 +170,48 @@ blameprompt import-agent-trace      # display Agent Trace record
 blameprompt github-comment          # post AI attribution as PR comment
 ```
 
-All reporting commands support `--from`, `--to`, `--author`, and `--include-uncommitted`.
-
-### Transparent git wrapper
-
-Auto-attaches receipts on every `git commit` and auto-pushes notes on `git push`, with zero workflow changes:
+### Setup & diagnostics
 
 ```bash
-blameprompt install-git-wrap        # install ~/.blameprompt/bin/git shim
+blameprompt init --global           # global setup (hooks, git template, agents)
+blameprompt init                    # setup in current repo only
+blameprompt install-git-wrap        # transparent git wrapper (auto-attach on commit)
+blameprompt doctor                  # diagnose installation issues
+blameprompt update                  # self-update
+blameprompt uninstall               # remove hooks, keep receipt history
+blameprompt uninstall --purge       # remove everything including Git Notes
 ```
 
-## Git hooks
+## What gets captured
 
-Seven hooks cover the full lifecycle:
+Every AI receipt includes: provider, model, user, timestamp, session ID, prompt & response summaries, files changed (with line ranges, additions, deletions), token usage (input, output, cache read, cache creation), real token-based cost, tools used, MCP servers called, agents spawned, conversation chain of thought, prompt quality score, prompt category, acceptance rate, and parent receipt links for session continuations.
 
-| Hook | What it does |
-|------|-------------|
-| `pre-commit` | Reports staged receipt count |
-| `prepare-commit-msg` | Annotates commit editor with AI receipt info |
-| `post-commit` | Writes receipts as Git Notes |
-| `post-checkout` | Auto-initializes `.blameprompt/` in new clones, adds to `.gitignore`, fetches remote notes |
-| `post-merge` | Preserves staged receipts |
-| `pre-push` | Auto-pushes `refs/notes/blameprompt` to remote |
-| `post-rewrite` | Remaps notes after rebase/amend with line-offset adjustment |
+Cost tracking uses actual API token data — cache reads priced at 90% discount, cache creation at 25% surcharge. Pricing supported for Claude, GPT-4o/4.1/o1/o3, Gemini 2.5, Codex, and more.
 
-Installed globally via `init.templateDir`. Every new repo gets them automatically.
+## Enterprise
 
-## Configuration
+BlamePrompt Enterprise provides organizational-level AI code observability:
 
-Optional. Create `.blamepromptrc` in your repo or `~/.blamepromptrc`:
+- Aggregate AI code composition metrics across teams and repositories
+- Agent and model effectiveness comparison
+- Secure prompt storage with redaction and PII filtering
+- Cross-repository dashboards and analytics
 
-```toml
-[redaction]
-mode = "replace"    # or "hash"
+To learn more, visit [blameprompt.com](https://blameprompt.com).
 
-[[redaction.custom_patterns]]
-pattern = "INTERNAL-\\d{6}"
-replacement = "[REDACTED_INTERNAL_ID]"
+## Data & privacy
 
-[capture]
-max_prompt_length = 2000
-store_full_conversation = true
-```
-
-## Data
-
-Everything local. Nothing leaves your machine unless you `push`.
+Everything local by default. Nothing leaves your machine unless you `push` or `sync`.
 
 | What | Where |
 |------|-------|
 | AI receipts | `refs/notes/blameprompt` (inside `.git`) |
-| Agent Trace | `refs/notes/agent-trace` (inside `.git`) |
 | Staging | `.blameprompt/staging.json` (gitignored) |
+| Credentials | `~/.blameprompt/credentials` |
 | Cache | `~/.blameprompt/prompts.db` |
-| Git wrapper | `~/.blameprompt/bin/git` |
-| Template | `~/.blameprompt/git-template/` |
 | Config | `.blamepromptrc` or `~/.blamepromptrc` |
 
-## Privacy
-
-Zero network calls (except `git push`/`pull`). Zero API keys. Zero telemetry. Zero accounts. Built-in redaction engine strips secrets (API keys, passwords, AWS credentials, bearer tokens, high-entropy strings) before storage. Configurable patterns for org-specific secrets.
-
-## Uninstall
-
-```bash
-blameprompt uninstall               # remove hooks, keep receipt history
-blameprompt uninstall --purge       # remove everything including Git Notes
-```
+Zero telemetry. Zero tracking. Built-in redaction engine strips secrets (API keys, passwords, AWS credentials, bearer tokens) before storage.
 
 ## License
 

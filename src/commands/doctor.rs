@@ -185,6 +185,7 @@ fn check_sqlite_cache() -> CheckResult {
     }
 }
 
+#[allow(unknown_lints, clippy::manual_is_multiple_of)]
 fn format_number(n: i64) -> String {
     let s = n.to_string();
     let bytes = s.as_bytes();
