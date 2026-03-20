@@ -1,27 +1,20 @@
 # blameprompt
 
-**git blame, but for AI prompts.**
+**Your AI skills deserve a portfolio.**
 
-An open-source CLI that records exactly which AI prompt generated which code — every file, every line range, every model, every dollar spent. Stored as [Git Notes](https://git-scm.com/docs/git-notes) — nothing added to your working tree, nothing leaves your machine.
+Track your AI coding activity across 15 agents. Build your developer score. Earn achievement badges. Climb the leaderboard. Get a public profile at `blameprompt.com/username` that proves your AI coding skills — with real data, not self-reported claims.
 
 ```
-$ blameprompt blame src/auth.rs
+$ blameprompt profile
 
- Line  Code                                        Source  Provider  Model              Cost     Prompt
- ──────────────────────────────────────────────────────────────────────────────────────────────────────────
-    1  use jsonwebtoken::{encode, Header};          Human
-    2  use serde::{Deserialize, Serialize};         Human
-    3                                               Human
-    4  #[derive(Serialize, Deserialize)]            AI      claude    claude-sonnet-4-5  $0.0112  Add JWT claims struct
-    5  pub struct Claims {                          AI      claude    claude-sonnet-4-5  $0.0112  Add JWT claims struct
-    6      pub sub: String,                         AI      claude    claude-sonnet-4-5  $0.0112  Add JWT claims struct
-    7      pub exp: usize,                          AI      claude    claude-sonnet-4-5  $0.0112  Add JWT claims struct
-    8  }                                            AI      claude    claude-sonnet-4-5  $0.0112  Add JWT claims struct
-    9                                               Human
-   10  pub fn validate(token: &str) -> bool {       Human
-   11      // manual validation logic               Human
-
-Code Origin: 45.5% AI-generated, 54.5% human
+  Username:  alice
+  Email:     alice@dev.com
+  Score:     82 (Expert)
+  Rank:      #12 on leaderboard
+  Badges:    8/12 unlocked
+  Prompts:   14,832
+  Streak:    47 days
+  Profile:   blameprompt.com/alice
 ```
 
 ## Install
@@ -37,40 +30,91 @@ irm https://blameprompt.com/install.ps1 | iex
 cargo install --path .
 ```
 
-The installer automatically runs `blameprompt init --global` — setting up Claude Code hooks, Git template, and all detected agent hooks in one step. Every `git init` and `git clone` after that is tracked automatically.
+The installer automatically configures hooks for all 15 supported agents, installs Git hooks globally, and sets up the transparent git wrapper — every repo is tracked from that point forward.
 
-## Quick start
-
-After installing, log in to connect your dashboard:
+## Get started
 
 ```bash
-# Log in via GitHub
+# 1. Install (one-time)
+curl -sSL https://blameprompt.com/install.sh | bash
+
+# 2. Log in with GitHub
 blameprompt login
 
-# Open your dashboard
+# 3. Sync your data and build your profile
+blameprompt sync
+
+# 4. Open your dashboard
 blameprompt dash
 ```
 
-Or sign in directly at [blameprompt.com/login](https://blameprompt.com/login) to connect your GitHub account and access your dashboard.
+That's it. Your profile, score, heatmap, and badges start building automatically as you code with AI.
+
+Or sign in directly at [blameprompt.com/login](https://blameprompt.com/login).
+
+## What you get
+
+### Developer score (0-100)
+
+A composite rating based on real data:
+
+- **Prompt quality** — clarity, actionability, context, and efficiency scoring
+- **Acceptance rate** — how much AI-generated code you keep
+- **Cost efficiency** — results without burning tokens
+- **Model diversity** — knowing when to use Opus vs Sonnet vs GPT-4o
+- **Consistency** — daily streaks and sustained usage
+
+Ratings: Novice → Intermediate → Advanced → Expert → Elite
+
+### Public profile
+
+Your profile at `blameprompt.com/username` showcases:
+
+- Developer score and rating
+- GitHub-style prompt heatmap
+- Achievement badges (12 types)
+- Model proficiency breakdown
+- Language, tool, and editor usage
+- AI vs human code ratio
+
+Put it on your resume. Embed a badge in your GitHub README. Share on LinkedIn.
+
+### Achievement badges
+
+12 badges that track real milestones:
+
+- **Century** — 100 prompts
+- **Thousand Club** — 1,000 prompts
+- **Week Warrior** — 7-day streak
+- **Month Master** — 30-day streak
+- **Polyglot** — 5+ programming languages
+- **Multi-Agent** — 3+ AI agents used
+- **Cost Pro** — below-average cost per prompt
+- **Elite** — developer score 90+
+- And 4 more to discover
+
+### Global leaderboard
+
+Rank against developers worldwide by prompts, score, or active days. Browse the leaderboard at [blameprompt.com/leaderboard](https://blameprompt.com/leaderboard).
 
 ## How it works
 
 ```
-AI Agent ──> hooks/import ──> staging.json ──> git commit ──> Git Notes
-              (files, lines,     (local,        (post-commit    (refs/notes/
-               prompt, model,     gitignored)     hook)          blameprompt)
-               tools, agents,
-               cost, tokens)
+AI Agent ──> hooks/import ──> staging.json ──> git commit ──> Git Notes ──> sync ──> profile
+              (files, lines,     (local,        (post-commit    (refs/notes/    (score, badges,
+               prompt, model,     gitignored)     hook)          blameprompt)    heatmap, rank)
+               tools, cost)
 ```
 
-1. **You code with AI** — hooks fire in real time or you import sessions from other agents
-2. **One receipt per prompt** — all files changed are grouped with the prompt that triggered them
+1. **You code with AI** — hooks fire automatically or you import sessions from other agents
+2. **One receipt per prompt** — files, lines, model, cost, tokens, quality score — all captured
 3. **Receipts attach on commit** — `post-commit` hook writes everything as a Git Note
-4. **Query anytime** — `blame`, `show`, `search`, `audit`, `analytics`, `report`, `diff`
+4. **Sync to your profile** — `blameprompt sync` uploads aggregated metrics to your public profile
+5. **Score and badges update** — your developer score, heatmap, and achievement badges build automatically
 
-Receipts survive rebases, merges, and cherry-picks via the `post-rewrite` hook.
+Everything is local-first. Nothing leaves your machine unless you choose to sync.
 
-## Supported agents
+## Supported agents (15)
 
 All detected agents are auto-configured by `blameprompt init --global`. If an agent isn't installed, it's silently skipped.
 
@@ -91,32 +135,26 @@ All detected agents are auto-configured by `blameprompt init --global`. If an ag
 | **OpenCode** | `~/.opencode/hooks.json` | `blameprompt record-opencode` |
 | **Any provider** | — | `blameprompt record --session <file> --provider <name>` |
 
-The `record-*` commands import **historical sessions** from before blameprompt was installed. Once hooks are active, all new AI activity is tracked automatically.
-
 ## VS Code extension
 
 Install from [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Blameprompt.blameprompt).
 
-The companion extension provides three sidebar views:
-
 - **Prompt Receipts** — tree view of commits > prompts > files/tools/agents
-- **Prompt History** — git-log-style timeline with model-colored labels and filter search
-- **File History** — all prompts that modified the currently open file, auto-updates on tab switch
-
-Click any prompt to open a detailed receipt view with conversation turns, tool calls, and files touched.
+- **Prompt History** — git-log-style timeline with model-colored labels
+- **File History** — all prompts that modified the currently open file
 
 ## Commands
 
-### Account
+### Account & profile
 
 ```bash
-blameprompt login                   # authenticate via GitHub (opens browser)
+blameprompt login                   # sign in via GitHub (opens browser)
 blameprompt login --token <key>     # authenticate with API token (CI/headless)
 blameprompt logout                  # clear stored credentials
-blameprompt dash                    # open dashboard in browser
-blameprompt profile                 # show your profile
+blameprompt profile                 # show your score, rank, and badges
 blameprompt profile --edit          # edit profile in browser
-blameprompt sync                    # upload aggregated metrics to BlamePrompt Cloud
+blameprompt sync                    # sync receipts to your public profile
+blameprompt dash                    # open dashboard in browser
 ```
 
 ### Attribution
@@ -131,13 +169,14 @@ blameprompt check-provenance src/auth.rs          # AI vs human lines
 blameprompt check-provenance src/auth.rs --line 5 # specific line
 ```
 
-### Audit & reporting
+### Analytics & reporting
 
 ```bash
+blameprompt analytics                       # AI score, cost breakdown, model usage
 blameprompt audit                           # full audit trail (md, table, json, csv)
 blameprompt audit --from 2026-01-01 --author "Jane" --format json
-blameprompt analytics                       # aggregated stats + cost breakdown
 blameprompt report --output report.md       # comprehensive markdown report
+blameprompt report --quality                # prompt quality scoring report
 ```
 
 ### Security
@@ -157,7 +196,7 @@ blameprompt hackathon-report                    # last 24h, all participants
 blameprompt hackathon-report --start "2026-02-26T09:00:00Z" --end "2026-02-26T21:00:00Z"
 ```
 
-Generates an integrity report with timeline, code attribution, and anomaly detection (pre-written code, rehearsed prompts, activity gaps, etc.).
+Generates an integrity report with timeline, code attribution, and anomaly detection.
 
 ### Sharing & interop
 
@@ -173,7 +212,7 @@ blameprompt github-comment          # post AI attribution as PR comment
 ### Setup & diagnostics
 
 ```bash
-blameprompt init --global           # global setup (hooks, git template, agents)
+blameprompt init --global           # global setup (hooks, git template, 15 agents)
 blameprompt init                    # setup in current repo only
 blameprompt install-git-wrap        # transparent git wrapper (auto-attach on commit)
 blameprompt doctor                  # diagnose installation issues
@@ -184,24 +223,13 @@ blameprompt uninstall --purge       # remove everything including Git Notes
 
 ## What gets captured
 
-Every AI receipt includes: provider, model, user, timestamp, session ID, prompt & response summaries, files changed (with line ranges, additions, deletions), token usage (input, output, cache read, cache creation), real token-based cost, tools used, MCP servers called, agents spawned, conversation chain of thought, prompt quality score, prompt category, acceptance rate, and parent receipt links for session continuations.
+Every AI receipt includes: provider, model, user, timestamp, session ID, prompt & response summaries, files changed (with line ranges), token usage (input, output, cache read, cache creation), real token-based cost, tools used, MCP servers called, agents spawned, conversation chain of thought, prompt quality score (4-dimension: clarity, actionability, context, efficiency), prompt category, acceptance rate, and parent receipt links.
 
-Cost tracking uses actual API token data — cache reads priced at 90% discount, cache creation at 25% surcharge. Pricing supported for Claude, GPT-4o/4.1/o1/o3, Gemini 2.5, Codex, and more.
+Cost tracking uses actual API token data — cache reads at 90% discount, cache creation at 25% surcharge. Pricing for Claude, GPT-4o/4.1/o1/o3, Gemini 2.5, Codex, and more.
 
-## Enterprise
+## Privacy & data
 
-BlamePrompt Enterprise provides organizational-level AI code observability:
-
-- Aggregate AI code composition metrics across teams and repositories
-- Agent and model effectiveness comparison
-- Secure prompt storage with redaction and PII filtering
-- Cross-repository dashboards and analytics
-
-To learn more, visit [blameprompt.com](https://blameprompt.com).
-
-## Data & privacy
-
-Everything local by default. Nothing leaves your machine unless you `push` or `sync`.
+Everything is local-first. Nothing leaves your machine unless you `push` or `sync`.
 
 | What | Where |
 |------|-------|
@@ -211,7 +239,11 @@ Everything local by default. Nothing leaves your machine unless you `push` or `s
 | Cache | `~/.blameprompt/prompts.db` |
 | Config | `.blamepromptrc` or `~/.blamepromptrc` |
 
-Zero telemetry. Zero tracking. Built-in redaction engine strips secrets (API keys, passwords, AWS credentials, bearer tokens) before storage.
+Zero telemetry. Zero tracking. Built-in redaction engine strips secrets before storage. You choose what to sync to your public profile.
+
+## Enterprise
+
+BlamePrompt Enterprise provides team-level AI code observability, compliance reporting, and adoption benchmarking. Visit [blameprompt.com/enterprise](https://blameprompt.com/enterprise).
 
 ## License
 
