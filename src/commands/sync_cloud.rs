@@ -266,7 +266,12 @@ pub fn run(quiet: bool) {
                     b.quality_scores.iter().sum::<u32>() as f64 / b.quality_scores.len() as f64
                 };
                 let total_session_duration_secs: u64 = b.session_durations.values().sum();
-                let project = b.projects_used.keys().next().cloned().unwrap_or_else(|| "default".to_string());
+                let project = b
+                    .projects_used
+                    .keys()
+                    .next()
+                    .cloned()
+                    .unwrap_or_else(|| "default".to_string());
                 DailyActivity {
                     date,
                     prompt_count: b.prompt_count,

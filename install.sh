@@ -58,8 +58,9 @@ check_deps() {
 }
 
 fetch_latest_version() {
-    VERSION="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-        | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/')"
+    # Use redirect URL instead of API to avoid GitHub API rate limits (403)
+    LATEST_URL="$(curl -fsSL -o /dev/null -w "%{url_effective}" "https://github.com/${REPO}/releases/latest")"
+    VERSION="$(printf '%s' "$LATEST_URL" | sed 's|.*/v\{0,1\}||')"
     if [ -z "$VERSION" ]; then
         error "Could not detect latest version. Check https://github.com/${REPO}/releases"
     fi
@@ -68,7 +69,7 @@ fetch_latest_version() {
 main() {
     printf "\n"
     printf "  ${CYAN}BlamePrompt Installer${RESET}\n"
-    printf "  ${DIM}Track AI-generated code in Git${RESET}\n"
+    printf "  ${DIM}Your AI skills deserve a portfolio${RESET}\n"
     printf "\n"
 
     check_deps

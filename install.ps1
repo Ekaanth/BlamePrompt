@@ -13,14 +13,22 @@ function Write-Err($msg) { Write-Host "  [error] " -ForegroundColor Red -NoNewli
 
 Write-Host ""
 Write-Host "  BlamePrompt Installer" -ForegroundColor Cyan
-Write-Host "  Track AI-generated code in Git" -ForegroundColor DarkGray
+Write-Host "  Your AI skills deserve a portfolio" -ForegroundColor DarkGray
 Write-Host ""
 
 # Fetch latest version from GitHub API
 Write-Info "Fetching latest release..."
 try {
-    $Release = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" -UseBasicParsing
-    $Version = $Release.tag_name -replace '^v', ''
+    # Use redirect URL instead of API to avoid GitHub API rate limits (403)
+    $Response = Invoke-WebRequest -Uri "https://github.com/$Repo/releases/latest" -MaximumRedirection 0 -ErrorAction SilentlyContinue -UseBasicParsing
+    $RedirectUrl = $Response.Headers.Location
+    if (-not $RedirectUrl) {
+        # Fallback: follow redirect and parse final URL
+        $Response = Invoke-WebRequest -Uri "https://github.com/$Repo/releases/latest" -UseBasicParsing
+        $RedirectUrl = $Response.BaseResponse.RequestMessage.RequestUri.ToString()
+    }
+    $Version = ($RedirectUrl -split '/')[-1] -replace '^v', ''
+    if (-not $Version) { throw "empty version" }
 } catch {
     Write-Err "Could not detect latest version. Check https://github.com/$Repo/releases"
 }

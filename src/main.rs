@@ -5,10 +5,10 @@ mod integrations;
 
 use clap::{Parser, Subcommand};
 
-/// BlamePrompt: Track AI-generated code provenance via Git Notes.
-/// No API key needed — hooks into Claude Code's native session data.
+/// BlamePrompt: Your AI skills deserve a portfolio.
+/// Track your AI coding activity across 15 agents. Build your developer score.
 #[derive(Parser)]
-#[command(name = "blameprompt", version = env!("CARGO_PKG_VERSION"), about = "Track AI-generated code in git")]
+#[command(name = "blameprompt", version = env!("CARGO_PKG_VERSION"), about = "Your AI skills deserve a portfolio")]
 struct Cli {
     /// Enable verbose debug output
     #[arg(long, global = true)]

@@ -147,7 +147,7 @@ fn print_install_banner(use_stderr: bool, installed_agents: &[&str]) {
         format!("  {bg}  ██║     ██║  ██║╚██████╔╝██║ ╚═╝ ██║██║        ██║{r}"),
         format!("  {bg}  ╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═╝        ╚═╝{r}"),
         format!(
-            "  {d}  v{} · Track AI-generated code in Git{r}",
+            "  {d}  v{} · Your AI skills deserve a portfolio{r}",
             env!("CARGO_PKG_VERSION")
         ),
         String::new(),
